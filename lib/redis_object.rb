@@ -116,7 +116,7 @@ module Seabright
     end
     
     def save
-      set(:class, self.class.cname)
+      set(:class, self.class.name)
       set(id_sym,id)
       set(:key, key)
       if @data
@@ -326,8 +326,8 @@ module Seabright
           prnt = redis.hget(k,:parent)
           puts "Key: #{cls}:#{o_id}_h"
           if redis.exists(k)
-            puts "Exists!"
-            return Object.const_get(cls.to_sym).new(o_id,prnt)
+            puts "Exists! #{cls}"
+            return Object.deep_const_get(cls.to_sym).new(o_id,prnt)
           end
         end
         nil
