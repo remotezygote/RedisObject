@@ -1,5 +1,6 @@
 require "redis_object/redis_pool"
 require "redis_object/collection"
+require 'active_support/inflector'
 
 module Seabright
   class RedisObject
