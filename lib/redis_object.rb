@@ -2,6 +2,8 @@ module Seabright
   class RedisObject
     require "redis"
     require "yajl"
+    require "redis_object/redis_pool"
+    require "redis_object/collection"
     include AbstractController::Callbacks
 
     @@indices = []
@@ -12,175 +14,22 @@ module Seabright
     }
     @@time_irrelevant = false
     
-    class Collection < Array
-      
-      def initialize(name,parent)
-        @name = name
-        @parent = parent
+    def initialize(ident, prnt = nil)
+      if prnt && prnt.class != String
+        @parent = prnt
+        @parent_id = prnt.hkey
+      else
+        @parent_id = prnt
       end
-      
-      def indexed(index,num=5,reverse=false)
-        out = []
-        puts "Collection key: #{index_key(index)}"
-        redis.send(reverse ? :zrevrange : :zrange,index_key(index), 0, num).each do |member|
-          puts "  Member: #{member}"
-          if a = class_const.find_by_key(member)
-            puts "   Got: #{a.raw}"
-            out << a
-          else
-            puts "   No get!"
-            redis.zrem(index_key(index),member)
-          end
-        end
-        out
-      end
-      
-      def index_key(index)
-        "#{@parent.key}:#{class_const.name.pluralize}::#{index}"
-      end
-      
-      def find(key)
-        class_const.find(key,@parent)
-      end
-      
-      def real_at(key)
-        class_const.find_by_key(key)
-      end
-      
-      def objects
-        out = []
-        each_index do |key|
-          a = class_const.find_by_key(at(key))
-          out.push a if a
-        end
-        out
-      end
-      
-      def each
-        each_index do |key|
-          a = class_const.find_by_key(at(key))
-          yield a if a
+      @collections = {}
+      if ident && ident.class == String
+        load(ident)
+      elsif ident && ident.class == Hash
+        if load(ident[id_sym])
+          @data = ident
         end
       end
-      
-      def self.load(name,parent)
-        out = self.new(name,parent)
-        out.replace redis.smembers(out.key)
-        out
-      end
-      
-      def <<(obj)
-        redis.sadd(key,obj)
-        super(obj)
-      end
-      alias_method :push, :<<
-      
-      def save
-        # uniq!
-        # puts "Saving #{@name} collection to #{key}"
-        # each do |itm|
-        #   redis.sadd(key,itm)
-        # end
-      end
-      
-      def class_const
-        Object.const_get(@name.to_s.classify.to_sym)
-      end
-      
-      def key
-        "#{@parent ? "#{@parent.key}:" : ""}COLLECTION:#{@name}"
-      end
-      
-      private 
-      
-      def self.redis
-        @@redis ||= $redis.connection
-      end
-      
-      def redis
-        @@redis ||= $redis.connection
-      end
-      
-    end
-    
-    def self.indexed(index,num=5,reverse=false)
-      out = []
-      redis.send(reverse ? :zrevrange : :zrange, "#{self.name.pluralize}::#{index}", 0, num).each do |member|
-        if a = self.find_by_key(member)
-          out << a
-        else
-          # redis.zrem(self.name.pluralize,member)
-        end
-      end
-      out
-    end
-    
-    def self.recently_created(num=5)
-      self.indexed(:created_at,num,true)
-    end
-    
-    def self.recently_updated(num=5)
-      self.indexed(:updated_at,num,true)
-    end
-    
-    def self.all
-      out = []
-      redis.smembers(self.name.pluralize).each do |member|
-        if a = self.find(member)
-          out << a
-        else
-          redis.srem(self.name.pluralize,member)
-        end
-      end
-      out
-    end
-    
-    def self.find(ident,prnt=nil)
-      redis.exists(self.hkey(ident,prnt)) ? self.new(ident,prnt) : nil
-    end
-    
-    def self.create(ident)
-      obj = self.class.new(ident)
-      obj.save
-      obj
-    end
-    
-    def self.dump
-      out = []
-      self.all.each do |obj|
-        out << obj.dump
-      end
-      out.join("\n")
-    end
-    
-    def self.index(opts)
-      @@indices << opts
-    end
-    
-    def self.time_matters_not!
-      @@time_irrelevant = true
-      @@sort_indices.delete(:created_at)
-      @@sort_indices.delete(:updated_at)
-    end
-    
-    def self.sort_by(k)
-      @@sort_indices << (k)
-    end
-    
-    def self.date(k)
-      @@field_formats[k] = :format_date
-    end
-    
-    def self.number(k)
-      @@field_formats[k] = :format_number
-    end
-    
-    def self.save_history!(v=true)
-      @@save_history = v
-    end
-    
-    def self.save_history?
-      @@save_history || false
+      # enforce_formats
     end
     
     def save_history?
@@ -201,7 +50,7 @@ module Seabright
       out << "a#{s_id}.save"
       out.join("\n")
     end
-
+    
     def store_image
       redis.sadd history_key, {:timestamp => Time.now, :snapshot => actual}.to_json
     end
@@ -212,24 +61,6 @@ module Seabright
     
     def to_json
       Yajl::Encoder.encode(actual)
-    end
-    
-    def initialize(ident, prnt = nil)
-      if prnt && prnt.class != String
-        @parent = prnt
-        @parent_id = prnt.hkey
-      else
-        @parent_id = prnt
-      end
-      @collections = {}
-      if ident && ident.class == String
-        load(ident)
-      elsif ident && ident.class == Hash
-        if load(ident[id_sym])
-          @data = ident
-        end
-      end
-      # enforce_formats
     end
     
     def enforce_format(k,v)
@@ -260,39 +91,6 @@ module Seabright
       "#{hkey}:collections"
     end
     
-    def self.key(ident, prnt = nil)
-      "#{prnt ? prnt.class==String ? "#{prnt}:" : "#{prnt.key}:" : ""}#{self.name}:#{ident.gsub(/^.*:/,'')}"
-    end
-    
-    def self.hkey(ident = id, prnt = nil)
-      "#{key(ident,prnt)}_h"
-    end
-    
-    def self.history_key(ident = id, prnt = nil)
-      "#{key(ident,prnt)}_history"
-    end
-    
-    def self.hkey_col(ident = id, prnt = nil)
-      "#{hkey(ident,prnt)}:collections"
-    end
-    
-    def self.find_by_key(k)
-      if cls = redis.hget(k,:class) 
-        o_id = redis.hget(k,id_sym(cls))
-        prnt = redis.hget(k,:parent)
-        puts "Key: #{cls}:#{o_id}_h"
-        if redis.exists(k)
-          puts "Exists!"
-          return Object.const_get(cls.to_sym).new(o_id,prnt)
-        end
-      end
-      nil
-    end
-    
-    def find_by_key(k)
-      self.class.find_by_key(k)
-    end
-    
     def parent
       @parent ||= @parent_id ? find_by_key(@parent_id) : nil
     end
@@ -312,11 +110,11 @@ module Seabright
     def load(id)
       @id = id
       redis.smembers(hkey_col).each do |name|
-        @collections[name] = Collection.load(name,self)
+        @collections[name] = Seabright::Collection.load(name,self)
       end
       true
     end
-
+    
     def save
       set(:class, self.class.name)
       set(id_sym,id)
@@ -351,13 +149,6 @@ module Seabright
       "#{parent ? "#{parent.key}:" : ""}#{self.class.name.pluralize}::#{idx}#{extra ? ":#extra" : ""}"
     end
     
-    def self.save_all
-      all.each do |obj|
-        obj.save
-      end
-      true
-    end
-    
     def delete!
       redis.del key
       redis.srem(self.class.name.pluralize, key)
@@ -368,7 +159,7 @@ module Seabright
       obj.save
       name = obj.class.name.downcase.pluralize.to_sym
       redis.sadd hkey_col, name
-      @collections[name] ||= Collection.load(name,self)
+      @collections[name] ||= Seabright::Collection.load(name,self)
       @collections[name] << obj.hkey
     end
     alias_method :push, :<<
@@ -376,7 +167,7 @@ module Seabright
     def reference(obj)
       name = obj.class.name.downcase.pluralize.to_sym
       redis.sadd hkey_col, name
-      @collections[name] ||= Collection.load(name,self)
+      @collections[name] ||= Seabright::Collection.load(name,self)
       @collections[name] << obj.hkey
     end
     
@@ -393,26 +184,22 @@ module Seabright
       end
     end
     alias_method :[], :get
-
+    
     def get_collection(name)
-      @collections[name.to_s] ||= Collection.load(name,self)
+      @collections[name.to_s] ||= Seabright::Collection.load(name,self)
     end
     
     def set(k,v)
       @data ? @data[k] = v : @collections[k.to_sym] ? get_collection(k).replace(v) : redis.hset(hkey, k.to_s.gsub(/\=$/,''), v)
       v
     end
-
+    
     private
     
     def redis
-      $redis.connection
+      @@redis ||= self.class.redis
     end
-
-    def self.redis
-      $redis.connection
-    end
-
+    
     def method_missing(sym, *args, &block)
       sym.to_s =~ /=$/ ? set(sym,*args) : get(sym)
     end
@@ -421,14 +208,138 @@ module Seabright
       "#{(cls || self.class.name).downcase}_id".to_sym
     end
     
-    def self.id_sym(cls=nil)
-      "#{(cls || self.name).downcase}_id".to_sym
-    end
-    
     def update_timestamps
       return if @@time_irrelevant
       set(:created_at, Time.now) if !get(:created_at)
       set(:updated_at, Time.now)
+    end
+    
+    class << self
+      
+      def indexed(index,num=5,reverse=false)
+        out = []
+        redis.send(reverse ? :zrevrange : :zrange, "#{self.name.pluralize}::#{index}", 0, num).each do |member|
+          if a = self.find_by_key(member)
+            out << a
+          else
+            # redis.zrem(self.name.pluralize,member)
+          end
+        end
+        out
+      end
+      
+      def recently_created(num=5)
+        self.indexed(:created_at,num,true)
+      end
+      
+      def recently_updated(num=5)
+        self.indexed(:updated_at,num,true)
+      end
+      
+      def all
+        out = []
+        redis.smembers(self.name.pluralize).each do |member|
+          if a = self.find(member)
+            out << a
+          else
+            redis.srem(self.name.pluralize,member)
+          end
+        end
+        out
+      end
+      
+      def find(ident,prnt=nil)
+        redis.exists(self.hkey(ident,prnt)) ? self.new(ident,prnt) : nil
+      end
+      
+      def create(ident)
+        obj = self.class.new(ident)
+        obj.save
+        obj
+      end
+      
+      def dump
+        out = []
+        self.all.each do |obj|
+          out << obj.dump
+        end
+        out.join("\n")
+      end
+      
+      def index(opts)
+        @@indices << opts
+      end
+      
+      def time_matters_not!
+        @@time_irrelevant = true
+        @@sort_indices.delete(:created_at)
+        @@sort_indices.delete(:updated_at)
+      end
+      
+      def sort_by(k)
+        @@sort_indices << (k)
+      end
+      
+      def date(k)
+        @@field_formats[k] = :format_date
+      end
+      
+      def number(k)
+        @@field_formats[k] = :format_number
+      end
+      
+      def save_history!(v=true)
+        @@save_history = v
+      end
+      
+      def save_history?
+        @@save_history || false
+      end
+      
+      def key(ident, prnt = nil)
+        "#{prnt ? prnt.class==String ? "#{prnt}:" : "#{prnt.key}:" : ""}#{self.name}:#{ident.gsub(/^.*:/,'')}"
+      end
+      
+      def hkey(ident = id, prnt = nil)
+        "#{key(ident,prnt)}_h"
+      end
+      
+      def history_key(ident = id, prnt = nil)
+        "#{key(ident,prnt)}_history"
+      end
+      
+      def hkey_col(ident = id, prnt = nil)
+        "#{hkey(ident,prnt)}:collections"
+      end
+      
+      def find_by_key(k)
+        if cls = redis.hget(k,:class) 
+          o_id = redis.hget(k,id_sym(cls))
+          prnt = redis.hget(k,:parent)
+          puts "Key: #{cls}:#{o_id}_h"
+          if redis.exists(k)
+            puts "Exists!"
+            return Object.const_get(cls.to_sym).new(o_id,prnt)
+          end
+        end
+        nil
+      end
+      
+      def save_all
+        all.each do |obj|
+          obj.save
+        end
+        true
+      end
+      
+      def redis
+        @@redis ||= Seabright::RedisPool.connection
+      end
+      
+      def id_sym(cls=nil)
+        "#{(cls || self.name).downcase}_id".to_sym
+      end
+      
     end
     
   end

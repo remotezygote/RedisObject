@@ -4,7 +4,7 @@ require "redis_object/version"
 
 Gem::Specification.new do |s|
   s.name        = "redis_object"
-  s.version     = Sabright::RedisObject::VERSION
+  s.version     = Seabright::RedisObject::VERSION
   s.platform    = Gem::Platform::RUBY
   s.authors     = ["John Bragg"]
   s.email       = ["john@seabrightstudios.com"]
