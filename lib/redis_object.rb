@@ -1,11 +1,8 @@
+require "redis_object/redis_pool"
+require "redis_object/collection"
+
 module Seabright
   class RedisObject
-    require "redis"
-    require "yajl"
-    require "active_support"
-    require "redis_object/redis_pool"
-    require "redis_object/collection"
-    # include AbstractController::Callbacks
 
     @@indices = []
     @@sort_indices = [:created_at,:updated_at]
