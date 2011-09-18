@@ -7,7 +7,7 @@ module Seabright
       
       def connection
         @connections ||= []
-        return @connections[(nxt = next_idx)] if @connections[nxt] and @connections[nxt].connected?
+        return @connections[(nxt = self.next_idx)] if @connections[nxt] and @connections[nxt].connected?
         @connections[nxt] ||= File.exists?("/tmp/redis.sock") ? Redis.new(:path => "/tmp/redis.sock") : Redis.new rescue Redis.new
       end
       
