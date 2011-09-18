@@ -2,7 +2,7 @@ module Seabright
   class RedisObject
     require "redis"
     require "yajl"
-    require "activesupport"
+    require "active_support"
     require "redis_object/redis_pool"
     require "redis_object/collection"
     include AbstractController::Callbacks
