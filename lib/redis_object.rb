@@ -41,7 +41,7 @@ module Seabright
       require "utf8_utils"
       out = ["puts \"Creating: #{id}\""]
       s_id = (prnt ? "#{prnt.id} #{id}" : id).gsub(/\W/,"_")
-      out << "a#{s_id} = #{self.class.name}.new(#{actual.to_s.tidy_bytes},#{prnt.id})"
+      out << "a#{s_id} = #{self.class.cname}.new(#{actual.to_s.tidy_bytes},#{prnt.id})"
       @collections.each do |col|
         col.each do |sobj|
           out << sobj.dump(self)
@@ -77,7 +77,7 @@ module Seabright
     end
     
     def key(ident = id, prnt = parent)
-      "#{prnt ? prnt.class==String ? "#{prnt}:" : "#{prnt.key}:" : ""}#{self.class.name}:#{ident.gsub(/^.*:/,'')}"
+      "#{prnt ? prnt.class==String ? "#{prnt}:" : "#{prnt.key}:" : ""}#{self.class.cname}:#{ident.gsub(/^.*:/,'')}"
     end
     
     def hkey(ident = nil, prnt = nil)
@@ -117,7 +117,7 @@ module Seabright
     end
     
     def save
-      set(:class, self.class.name)
+      set(:class, self.class.cname)
       set(id_sym,id)
       set(:key, key)
       if @data
@@ -128,7 +128,7 @@ module Seabright
         end
       end
       update_timestamps
-      redis.sadd(self.class.name.pluralize, key)
+      redis.sadd(self.class.cname.pluralize, key)
       @collections.each do |k,col|
         col.save
       end
@@ -147,18 +147,18 @@ module Seabright
     end
     
     def index_key(idx,extra=nil)
-      "#{parent ? "#{parent.key}:" : ""}#{self.class.name.pluralize}::#{idx}#{extra ? ":#extra" : ""}"
+      "#{parent ? "#{parent.key}:" : ""}#{self.class.plname}::#{idx}#{extra ? ":#extra" : ""}"
     end
     
     def delete!
       redis.del key
-      redis.srem(self.class.name.pluralize, key)
+      redis.srem(self.class.plname, key)
     end
     
     def <<(obj)
       obj.parent = self
       obj.save
-      name = obj.class.name.downcase.pluralize.to_sym
+      name = obj.class.plname.downcase.to_sym
       redis.sadd hkey_col, name
       @collections[name] ||= Seabright::Collection.load(name,self)
       @collections[name] << obj.hkey
@@ -166,7 +166,7 @@ module Seabright
     alias_method :push, :<<
     
     def reference(obj)
-      name = obj.class.name.downcase.pluralize.to_sym
+      name = obj.class.plname.downcase.to_sym
       redis.sadd hkey_col, name
       @collections[name] ||= Seabright::Collection.load(name,self)
       @collections[name] << obj.hkey
@@ -206,7 +206,7 @@ module Seabright
     end
     
     def id_sym(cls=nil)
-      "#{(cls || self.class.name).downcase}_id".to_sym
+      "#{(cls || self.class.cname).downcase}_id".to_sym
     end
     
     def update_timestamps
@@ -219,11 +219,11 @@ module Seabright
       
       def indexed(index,num=5,reverse=false)
         out = []
-        redis.send(reverse ? :zrevrange : :zrange, "#{self.name.pluralize}::#{index}", 0, num).each do |member|
+        redis.send(reverse ? :zrevrange : :zrange, "#{self.plname}::#{index}", 0, num).each do |member|
           if a = self.find_by_key(member)
             out << a
           else
-            # redis.zrem(self.name.pluralize,member)
+            # redis.zrem(self.plname,member)
           end
         end
         out
@@ -237,13 +237,21 @@ module Seabright
         self.indexed(:updated_at,num,true)
       end
       
+      def cname
+        @cname = self.name.split('::').last
+      end
+      
+      def plname
+        @plname ||= cname.pluralize
+      end
+      
       def all
         out = []
-        redis.smembers(self.name.pluralize).each do |member|
+        redis.smembers(plname).each do |member|
           if a = self.find(member)
             out << a
           else
-            redis.srem(self.name.pluralize,member)
+            redis.srem(plname)
           end
         end
         out
@@ -298,7 +306,7 @@ module Seabright
       end
       
       def key(ident, prnt = nil)
-        "#{prnt ? prnt.class==String ? "#{prnt}:" : "#{prnt.key}:" : ""}#{self.name}:#{ident.gsub(/^.*:/,'')}"
+        "#{prnt ? prnt.class==String ? "#{prnt}:" : "#{prnt.key}:" : ""}#{cname}:#{ident.gsub(/^.*:/,'')}"
       end
       
       def hkey(ident = id, prnt = nil)
@@ -338,7 +346,7 @@ module Seabright
       end
       
       def id_sym(cls=nil)
-        "#{(cls || self.name).downcase}_id".to_sym
+        "#{(cls || cname).downcase}_id".to_sym
       end
       
     end
