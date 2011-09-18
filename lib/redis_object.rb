@@ -327,7 +327,7 @@ module Seabright
           puts "Key: #{cls}:#{o_id}_h"
           if redis.exists(k)
             puts "Exists! #{cls}"
-            return Object.deep_const_get(cls.to_sym).new(o_id,prnt)
+            return Object.const_get(cls.to_sym).new(o_id,prnt)
           end
         end
         nil
