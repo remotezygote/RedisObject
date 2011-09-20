@@ -325,9 +325,7 @@ module Seabright
         if cls = redis.hget(k,:class) 
           o_id = redis.hget(k,id_sym(cls))
           prnt = redis.hget(k,:parent)
-          puts "Key: #{cls}:#{o_id}_h"
           if redis.exists(k)
-            puts "Exists! #{cls}"
             return Object.const_get(cls.to_sym).new(o_id,prnt)
           end
         end
