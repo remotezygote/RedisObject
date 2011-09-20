@@ -108,8 +108,8 @@ module Seabright
       @id || set(:id_sym, get(:id_sym) || ActiveSupport::SecureRandom.hex(8))
     end
     
-    def load(id)
-      @id = id
+    def load(o_id)
+      @id = o_id
       redis.smembers(hkey_col).each do |name|
         @collections[name] = Seabright::Collection.load(name,self)
       end
