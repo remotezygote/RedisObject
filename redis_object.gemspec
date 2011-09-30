@@ -21,5 +21,4 @@ Gem::Specification.new do |s|
   s.add_dependency "redis"
   s.add_dependency "yajl-ruby"
   s.add_dependency "activesupport"
-  s.add_dependency "extensions", ">= 0.6.2"
 end

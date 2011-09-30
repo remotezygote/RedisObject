@@ -2,7 +2,6 @@ require "redis_object/redis_pool"
 require "redis_object/collection"
 require 'active_support/inflector'
 require 'active_support/core_ext/date_time/conversions'
-require 'extensions/module'
 
 module Seabright
   class RedisObject
@@ -326,10 +325,24 @@ module Seabright
           o_id = redis.hget(k,id_sym(cls))
           prnt = redis.hget(k,:parent)
           if redis.exists(k)
-            return Object.const_get(cls.to_sym).new(o_id,prnt)
+            return deep_const_get(cls.to_sym).new(o_id,prnt)
           end
         end
         nil
+      end
+      
+      def deep_const_get(const)
+        if Symbol === const
+          const = const.to_s
+        else
+          const = const.to_str.dup
+        end
+        if const.sub!(/^::/, '')
+          base = Object
+        else
+          base = self
+        end
+        const.split(/::/).inject(base) { |mod, name| mod.const_get(name) }
       end
       
       def save_all
