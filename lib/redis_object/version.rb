@@ -1,5 +1,5 @@
 module Seabright
   class RedisObject
-    VERSION = "0.0.2a"
+    VERSION = "0.1"
   end
 end

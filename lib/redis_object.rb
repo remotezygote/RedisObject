@@ -55,10 +55,6 @@ module Seabright
       redis.sadd history_key, {:timestamp => Time.now, :snapshot => actual}.to_json
     end
     
-    def actual
-      raw #.inject({}) {|acc,(k,v)| acc[k] = v if ![:collections, :key].include?(k) && (!@data[:collections] || !@data[:collections].include?(k.to_s)); acc }
-    end
-    
     def to_json
       Yajl::Encoder.encode(actual)
     end
@@ -174,7 +170,17 @@ module Seabright
     def raw
       redis.hgetall(hkey).inspect
     end
+    alias_method :inspect, :raw
+    alias_method :actual, :raw
     
+    # def inspect
+    #   raw
+    # end
+    # 
+    # def actual
+    #   raw #.inject({}) {|acc,(k,v)| acc[k] = v if ![:collections, :key].include?(k) && (!@data[:collections] || !@data[:collections].include?(k.to_s)); acc }
+    # end
+    # 
     def get(k)
       if @collections[k.to_s] 
         get_collection(k.to_s)
