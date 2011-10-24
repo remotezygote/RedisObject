@@ -36,23 +36,15 @@ module Seabright
       save_history || self.class.save_history?
     end
     
-    def dump(prnt=nil)
-      require "utf8_utils"
-      out = ["puts \"Creating: #{id}\""]
-      s_id = (prnt ? "#{prnt.id} #{id}" : id).gsub(/\W/,"_")
-      out << "a#{s_id} = #{self.class.cname}.new(#{actual.to_s.tidy_bytes},#{prnt.id})"
-      @collections.each do |col|
-        col.each do |sobj|
-          out << sobj.dump(self)
-        end
-      end
-      out << "a#{prnt.id.gsub(/\W/,"_")} << a#{s_id}" if prnt
-      out << "a#{s_id}.save"
-      out.join("\n")
+    def store_image
+      redis.zadd history_key, Time.now.to_i, to_json
     end
     
-    def store_image
-      redis.sadd history_key, {:timestamp => Time.now, :snapshot => actual}.to_json
+    def history(num=5,reverse=false)
+      parser = Yajl::Parser
+      redis.send(reverse ? :zrevrange : :zrange, history_key, 0, num).collect do |member|
+        parser.parse(member)
+      end
     end
     
     def to_json
@@ -69,6 +61,25 @@ module Seabright
     
     def format_number(val)
       val.to_i
+    end
+    
+    def format_boolean(val)
+      !!val
+    end
+    
+    def dump(prnt=nil)
+      require "utf8_utils"
+      out = ["puts \"Creating: #{id}\""]
+      s_id = (prnt ? "#{prnt.id} #{id}" : id).gsub(/\W/,"_")
+      out << "a#{s_id} = #{self.class.cname}.new(#{actual.to_s.tidy_bytes},#{prnt.id})"
+      @collections.each do |col|
+        col.each do |sobj|
+          out << sobj.dump(self)
+        end
+      end
+      out << "a#{prnt.id.gsub(/\W/,"_")} << a#{s_id}" if prnt
+      out << "a#{s_id}.save"
+      out.join("\n")
     end
     
     def key(ident = id, prnt = parent)
@@ -128,6 +139,7 @@ module Seabright
         col.save
       end
       save_indices
+      store_image if save_history?
     end
     
     def save_indices
@@ -168,7 +180,7 @@ module Seabright
     end
     
     def raw
-      redis.hgetall(hkey).inspect
+      redis.hgetall(hkey).inject({}) {|acc,k| acc[k[0]] = enforce_format(k[0],k[1]); acc }
     end
     alias_method :inspect, :raw
     alias_method :actual, :raw
@@ -300,6 +312,10 @@ module Seabright
       
       def number(k)
         @@field_formats[k] = :format_number
+      end
+      
+      def bool(k)
+        @@field_formats[k] = :format_boolean
       end
       
       def save_history!(v=true)
