@@ -45,7 +45,11 @@ module Seabright
         yield a if a
       end
     end
-  
+    
+    def delete(obj)
+      redis.srem(key,obj)
+      super(obj)
+    end
   
     def <<(obj)
       redis.sadd(key,obj)

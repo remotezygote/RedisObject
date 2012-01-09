@@ -98,6 +98,10 @@ module Seabright
       "#{hkey}:collections"
     end
     
+    def ref_key(ident = nil, prnt = nil)
+      "#{hkey}:backreferences"
+    end
+    
     def parent
       @parent ||= @parent_id ? find_by_key(@parent_id) : nil
     end
@@ -160,6 +164,18 @@ module Seabright
     def delete!
       redis.del key
       redis.srem(self.class.plname, key)
+      if parent
+        parent.delete_child self
+      end
+      redis.smembers(ref_key).each do |k|
+        if self.class.find_by_key(k)
+      end
+    end
+    
+    def delete_child(obj)
+      if col = @collections[obj.class.plname.downcase.to_sym]
+        col.delete obj.hkey
+      end
     end
     
     def <<(obj)
@@ -177,6 +193,11 @@ module Seabright
       redis.sadd hkey_col, name
       @collections[name] ||= Seabright::Collection.load(name,self)
       @collections[name] << obj.hkey
+      obj.referenced_by self
+    end
+    
+    def referenced_by(obj)
+      redis.sadd(ref_key,obj.hkey)
     end
     
     def raw
@@ -268,7 +289,7 @@ module Seabright
           if a = self.find(member)
             out << a
           else
-            redis.srem(plname)
+            # redis.srem(plname,member)
           end
         end
         out
