@@ -169,6 +169,8 @@ module Seabright
       end
       redis.smembers(ref_key).each do |k|
         if self.class.find_by_key(k)
+          
+        end
       end
     end
     
