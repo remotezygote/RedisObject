@@ -48,6 +48,7 @@ module Seabright
     end
     
     def to_json
+      require 'yajl'
       Yajl::Encoder.encode(actual)
     end
     
