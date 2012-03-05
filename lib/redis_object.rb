@@ -347,7 +347,7 @@ module Seabright
       end
       
       def save_history?
-        @@save_history || false
+        @@save_history ||= false
       end
       
       def key(ident, prnt = nil)
