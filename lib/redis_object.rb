@@ -1,7 +1,6 @@
 require "redis_object/redis_pool"
 require "redis_object/collection"
 require 'active_support/inflector'
-require 'securerandom'
 require 'active_support/core_ext/date_time/conversions'
 
 module Seabright
@@ -26,12 +25,17 @@ module Seabright
       if ident && ident.class == String
         load(ident)
       elsif ident && ident.class == Hash
-        ident[id_sym] ||= SecureRandom.hex(8)
+        ident[id_sym] ||= generate_id
         if load(ident[id_sym])
           @data = ident
         end
       end
       # enforce_formats
+    end
+    
+    def generate_id
+      require 'securerandom'
+      SecureRandom.hex(8)
     end
     
     def save_history?
@@ -118,7 +122,7 @@ module Seabright
     end
     
     def id
-      @id || set(:id_sym, get(:id_sym) || SecureRandom.hex(8))
+      @id || set(:id_sym, get(:id_sym) || generate_id)
     end
     
     def load(o_id)
