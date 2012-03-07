@@ -33,11 +33,15 @@ module Seabright
       # enforce_formats
     end
     
+    def new_id
+      rand(36**6).to_s(36)
+    end
+    
     def generate_id
-      v = rand(36**6).to_s(36)
+      v = new_id
       while self.class.exists?(v) do
         puts "[RedisObject] Collision at id: #{v}"
-        v = rand(36**6).to_s(36)
+        v = new_id
       end
       v
     end
