@@ -25,6 +25,7 @@ module Seabright
       if ident && ident.class == String
         load(ident)
       elsif ident && ident.class == Hash
+        ident[id_sym] ||= ActiveSupport::SecureRandom.hex(8)
         if load(ident[id_sym])
           @data = ident
         end
