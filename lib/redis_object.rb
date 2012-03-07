@@ -34,8 +34,12 @@ module Seabright
     end
     
     def generate_id
-      require 'securerandom'
-      SecureRandom.hex(8)
+      v = rand(36**6).to_s(36)
+      while self.class.exists?(v) do
+        puts "[RedisObject] Collision at id: #{v}"
+        v = rand(36**6).to_s(36)
+      end
+      v
     end
     
     def save_history?
@@ -381,6 +385,10 @@ module Seabright
           end
         end
         nil
+      end
+      
+      def exists?(k)
+        redis.exists key(k)
       end
       
       def deep_const_get(const)
