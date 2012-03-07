@@ -316,6 +316,10 @@ module Seabright
         redis.exists(self.hkey(ident,prnt)) ? self.new(ident,prnt) : nil
       end
       
+      def exists?(k)
+        redis.exists self.hkey(k)
+      end
+      
       def create(ident)
         obj = self.class.new(ident)
         obj.save
@@ -389,10 +393,6 @@ module Seabright
           end
         end
         nil
-      end
-      
-      def exists?(k)
-        redis.exists key(k)
       end
       
       def deep_const_get(const)
