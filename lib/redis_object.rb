@@ -1,7 +1,6 @@
 require "redis_object/redis_pool"
 require "redis_object/collection"
 require 'active_support/inflector'
-require 'active_support/secure_random'
 require 'active_support/core_ext/date_time/conversions'
 
 module Seabright
