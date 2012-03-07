@@ -26,7 +26,7 @@ module Seabright
       if ident && ident.class == String
         load(ident)
       elsif ident && ident.class == Hash
-        ident[id_sym] ||= ActiveSupport::SecureRandom.hex(8)
+        ident[id_sym] ||= SecureRandom.hex(8)
         if load(ident[id_sym])
           @data = ident
         end
@@ -118,7 +118,7 @@ module Seabright
     end
     
     def id
-      @id || set(:id_sym, get(:id_sym) || ActiveSupport::SecureRandom.hex(8))
+      @id || set(:id_sym, get(:id_sym) || SecureRandom.hex(8))
     end
     
     def load(o_id)
