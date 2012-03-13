@@ -218,7 +218,11 @@ module Seabright
     end
     
     def raw
-      redis.hgetall(hkey).inject({}) {|acc,k| acc[k[0]] = enforce_format(k[0],k[1]); acc }
+      if @data
+        @data
+      else
+        redis.hgetall(hkey).inject({}) {|acc,k| acc[k[0]] = enforce_format(k[0],k[1]); acc }
+      end
     end
     alias_method :inspect, :raw
     alias_method :actual, :raw
