@@ -107,7 +107,7 @@ module Seabright
       "#{prnt ? prnt.class==String ? "#{prnt}:" : "#{prnt.key}:" : ""}#{self.class.cname}:#{ident.gsub(/^.*:/,'')}"
     end
     
-    def reserve_key(ident,prnt=nil)
+    def reserve_key(ident = id,prnt=nil)
       "#{key(ident,prnt)}_reserve"
     end
     
