@@ -387,7 +387,7 @@ module Seabright
       end
       
       def reserve_key(ident, prnt = nil)
-        "#{key}_reserve"
+        "#{key(ident)}_reserve"
       end
       
       def hkey(ident = id, prnt = nil)
