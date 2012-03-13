@@ -40,10 +40,15 @@ module Seabright
     def generate_id
       v = new_id
       while self.class.exists?(v) do
-        puts "[RedisObject] Collision at id: #{v}"
+        puts "[RedisObject] Collision at id: #{v}" if DEBUG
         v = new_id
       end
+      reserve(v)
       v
+    end
+    
+    def reserve(k)
+      redis.set(reserve_key,Yajl::Encoder.encode(Time.now))
     end
     
     def save_history?
@@ -101,6 +106,10 @@ module Seabright
       "#{prnt ? prnt.class==String ? "#{prnt}:" : "#{prnt.key}:" : ""}#{self.class.cname}:#{ident.gsub(/^.*:/,'')}"
     end
     
+    def reserve_key(ident=nil,prnt=nil)
+      "#{key}_reserve"
+    end
+    
     def hkey(ident = nil, prnt = nil)
       "#{key}_h"
     end
@@ -148,6 +157,7 @@ module Seabright
       if @data
         saving = @data
         @data = false
+        redis.hdel(hkey,"reserve")
         saving.each do |k,v|
           set(k,v)
         end
@@ -321,7 +331,7 @@ module Seabright
       end
       
       def exists?(k)
-        redis.exists self.hkey(k)
+        redis.exists(self.hkey(k)) || redis.exists(self.reserve_key(k))
       end
       
       def create(ident)
@@ -374,6 +384,10 @@ module Seabright
       
       def key(ident, prnt = nil)
         "#{prnt ? prnt.class==String ? "#{prnt}:" : "#{prnt.key}:" : ""}#{cname}:#{ident.gsub(/^.*:/,'')}"
+      end
+      
+      def reserve_key(ident, prnt = nil)
+        "#{key}_reserve"
       end
       
       def hkey(ident = id, prnt = nil)
