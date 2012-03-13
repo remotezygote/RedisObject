@@ -107,23 +107,23 @@ module Seabright
     end
     
     def reserve_key(ident=nil,prnt=nil)
-      "#{key}_reserve"
+      "#{key(ident,prnt)}_reserve"
     end
     
     def hkey(ident = nil, prnt = nil)
-      "#{key}_h"
+      "#{key(ident,prnt)}_h"
     end
     
     def history_key(ident = nil, prnt = nil)
-      "#{key}_history"
+      "#{key(ident,prnt)}_history"
     end
     
     def hkey_col(ident = nil, prnt = nil)
-      "#{hkey}:collections"
+      "#{hkey(ident,prnt)}:collections"
     end
     
     def ref_key(ident = nil, prnt = nil)
-      "#{hkey}:backreferences"
+      "#{hkey(ident,prnt)}:backreferences"
     end
     
     def parent
