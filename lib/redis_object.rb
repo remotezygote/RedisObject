@@ -43,6 +43,7 @@ module Seabright
         puts "[RedisObject] Collision at id: #{v}" if DEBUG
         v = new_id
       end
+      puts "[RedisObject] Reserving key: #{v}" if DEBUG
       reserve(v)
       v
     end
