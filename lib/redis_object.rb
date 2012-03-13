@@ -48,7 +48,7 @@ module Seabright
     end
     
     def reserve(k)
-      redis.set(reserve_key,Time.now.to_s)
+      redis.set(reserve_key(k),Time.now.to_s)
     end
     
     def save_history?
