@@ -48,7 +48,7 @@ module Seabright
     end
     
     def reserve(k)
-      redis.set(reserve_key,Yajl::Encoder.encode(Time.now))
+      redis.set(reserve_key,Time.now.to_s)
     end
     
     def save_history?
@@ -387,7 +387,7 @@ module Seabright
       end
       
       def reserve_key(ident, prnt = nil)
-        "#{key(ident)}_reserve"
+        "#{key(ident,prnt)}_reserve"
       end
       
       def hkey(ident = id, prnt = nil)
