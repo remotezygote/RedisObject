@@ -158,7 +158,6 @@ module Seabright
       if @data
         saving = @data
         @data = false
-        redis.hdel(hkey,"reserve")
         saving.each do |k,v|
           set(k,v)
         end
@@ -170,6 +169,7 @@ module Seabright
       end
       save_indices
       store_image if save_history?
+      redis.del(reserve_key)
     end
     
     def save_indices
