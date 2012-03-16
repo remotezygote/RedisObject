@@ -23,7 +23,10 @@ module Seabright
     end
   
     def find(key)
-      class_const.find(key,@parent)
+      each do |a|
+        return a if a.id == key && include?(a.hkey)
+      end
+      return nil
     end
   
     def real_at(key)
