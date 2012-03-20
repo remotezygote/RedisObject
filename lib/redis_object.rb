@@ -14,7 +14,7 @@ module Seabright
     }
     @@time_irrelevant = false
     
-    def initialize(ident, prnt = nil)
+    def initialize(ident={}, prnt = nil)
       if prnt && prnt.class != String
         @parent = prnt
         @parent_id = prnt.hkey
@@ -144,6 +144,7 @@ module Seabright
     end
     
     def load(o_id)
+			# return false if !exists?(o_id)
       @id = o_id
       redis.smembers(hkey_col).each do |name|
         @collections[name] = Seabright::Collection.load(name,self)

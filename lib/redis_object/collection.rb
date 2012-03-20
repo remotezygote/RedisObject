@@ -32,6 +32,10 @@ module Seabright
     def real_at(key)
       class_const.find_by_key(key)
     end
+
+		def [](idx)
+			class_const.find_by_key(at(idx))
+		end
   
     def objects
       out = []

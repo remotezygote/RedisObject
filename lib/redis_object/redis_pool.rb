@@ -13,7 +13,7 @@ module Seabright
       end
       
       def next_idx
-        @idx = @idx && @idx < POOL_SIZE-1 ? @idx+1 : 1
+        @idx = @idx && POOL_SIZE-@idx ? @idx+1 : 1
       end
       
     end
