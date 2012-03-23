@@ -53,6 +53,13 @@ module Seabright
       end
     end
     
+    def select(&block)
+      each_index do |key|
+        a = class_const.find_by_key(at(key))
+        yield a if block.call(a)
+      end
+    end
+    
     def delete(obj)
       redis.srem(key,obj)
       super(obj)
