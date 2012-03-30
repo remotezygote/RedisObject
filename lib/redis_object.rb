@@ -328,8 +328,27 @@ module Seabright
         out
       end
       
+      def each
+        redis.smembers(plname).each do |member|
+          if a = find(member)
+            yield a
+          end
+        end
+      end
+      
       def find(ident,prnt=nil)
-        redis.exists(self.hkey(ident,prnt)) ? self.new(ident,prnt) : nil
+        if ident.class == String
+          return redis.exists(self.hkey(ident,prnt)) ? self.new(ident,prnt) : nil
+        elsif ident.class == Hash
+          each do |obj|
+            good = true
+            ident.each do |k,v|
+              good = false if !obj[k.to_sym] || obj[k.to_sym]!=v
+            end
+            return obj if good
+          end
+        end
+        nil
       end
       
       def exists?(k)
