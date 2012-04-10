@@ -80,6 +80,10 @@ module Seabright
       val.instance_of?(DateTime) ? val : DateTime.parse(val)
     end
     
+    def format_array(val)
+      eval val
+    end
+    
     def format_number(val)
       val.to_i
     end
@@ -393,6 +397,10 @@ module Seabright
       
       def bool(k)
         @@field_formats[k] = :format_boolean
+      end
+      
+      def array(k)
+        @@field_formats[k] = :format_array
       end
       
       def save_history!(v=true)
