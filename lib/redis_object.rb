@@ -275,6 +275,7 @@ module Seabright
     def redis
       @@redis ||= self.class.redis
     end
+		alias_method :store, :redis
     
     def method_missing(sym, *args, &block)
       sym.to_s =~ /=$/ ? set(sym,*args) : get(sym)
@@ -466,7 +467,8 @@ module Seabright
       def redis
         @@redis ||= Seabright::RedisPool.connection
       end
-      
+      alias_method :store, :redis
+			
       def id_sym(cls=nil)
         "#{(cls || cname).downcase}_id".to_sym
       end
