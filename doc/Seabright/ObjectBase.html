@@ -1,0 +1,852 @@
+<!DOCTYPE html>
+
+<html>
+<head>
+<meta content="text/html; charset=UTF-8" http-equiv="Content-Type">
+
+<title>module Seabright::ObjectBase - StubbornObject</title>
+
+<link type="text/css" media="screen" href="../rdoc.css" rel="stylesheet">
+
+<script type="text/javascript">
+  var rdoc_rel_prefix = "../";
+</script>
+
+<script type="text/javascript" charset="utf-8" src="../js/jquery.js"></script>
+<script type="text/javascript" charset="utf-8" src="../js/navigation.js"></script>
+<script type="text/javascript" charset="utf-8" src="../js/search_index.js"></script>
+<script type="text/javascript" charset="utf-8" src="../js/search.js"></script>
+<script type="text/javascript" charset="utf-8" src="../js/searcher.js"></script>
+<script type="text/javascript" charset="utf-8" src="../js/darkfish.js"></script>
+
+
+<body id="top" class="module">
+<nav id="metadata">
+  <nav id="home-section" class="section">
+  <h3 class="section-header">
+    <a href="../index.html">Home</a>
+    <a href="../table_of_contents.html#classes">Classes</a>
+    <a href="../table_of_contents.html#methods">Methods</a>
+  </h3>
+</nav>
+
+
+  <nav id="search-section" class="section project-section" class="initially-hidden">
+  <form action="#" method="get" accept-charset="utf-8">
+    <h3 class="section-header">
+      <input type="text" name="search" placeholder="Search" id="search-field"
+             title="Type to search, Up and Down to navigate, Enter to load">
+    </h3>
+  </form>
+
+  <ul id="search-results" class="initially-hidden"></ul>
+</nav>
+
+
+  <div id="file-metadata">
+    <nav id="file-list-section" class="section">
+  <h3 class="section-header">Defined In</h3>
+  <ul>
+    <li>lib/redis_object/base.rb
+  </ul>
+</nav>
+
+    
+  </div>
+
+  <div id="class-metadata">
+    
+    
+    
+    <!-- Method Quickref -->
+<nav id="method-list-section" class="section">
+  <h3 class="section-header">Methods</h3>
+
+  <ul class="link-list">
+    
+    <li><a href="#method-c-new">::new</a>
+    
+    <li><a href="#method-i-5B-5D">#[]</a>
+    
+    <li><a href="#method-i-5B-5D-3D">#[]=</a>
+    
+    <li><a href="#method-i-actual">#actual</a>
+    
+    <li><a href="#method-i-delete-21">#delete!</a>
+    
+    <li><a href="#method-i-dump">#dump</a>
+    
+    <li><a href="#method-i-generate_id">#generate_id</a>
+    
+    <li><a href="#method-i-get">#get</a>
+    
+    <li><a href="#method-i-id">#id</a>
+    
+    <li><a href="#method-i-inspect">#inspect</a>
+    
+    <li><a href="#method-i-load">#load</a>
+    
+    <li><a href="#method-i-new_id">#new_id</a>
+    
+    <li><a href="#method-i-parent">#parent</a>
+    
+    <li><a href="#method-i-parent-3D">#parent=</a>
+    
+    <li><a href="#method-i-raw">#raw</a>
+    
+    <li><a href="#method-i-reserve">#reserve</a>
+    
+    <li><a href="#method-i-save">#save</a>
+    
+    <li><a href="#method-i-set">#set</a>
+    
+    <li><a href="#method-i-to_json">#to_json</a>
+    
+  </ul>
+</nav>
+
+  </div>
+
+  <div id="project-metadata">
+    
+    <nav id="classindex-section" class="section project-section">
+  <h3 class="section-header">Class and Module Index</h3>
+
+  <ul class="link-list">
+  
+    <li><a href="../Seabright.html">Seabright</a>
+  
+    <li><a href="../Seabright/Adapter.html">Seabright::Adapter</a>
+  
+    <li><a href="../Seabright/Collection.html">Seabright::Collection</a>
+  
+    <li><a href="../Seabright/Collections.html">Seabright::Collections</a>
+  
+    <li><a href="../Seabright/Collections/ClassMethods.html">Seabright::Collections::ClassMethods</a>
+  
+    <li><a href="../Seabright/ExternalIndex.html">Seabright::ExternalIndex</a>
+  
+    <li><a href="../Seabright/History.html">Seabright::History</a>
+  
+    <li><a href="../Seabright/History/ClassMethods.html">Seabright::History::ClassMethods</a>
+  
+    <li><a href="../Seabright/Indices.html">Seabright::Indices</a>
+  
+    <li><a href="../Seabright/Indices/ClassMethods.html">Seabright::Indices::ClassMethods</a>
+  
+    <li><a href="../Seabright/Keys.html">Seabright::Keys</a>
+  
+    <li><a href="../Seabright/Keys/ClassMethods.html">Seabright::Keys::ClassMethods</a>
+  
+    <li><a href="../Seabright/ObjectBase.html">Seabright::ObjectBase</a>
+  
+    <li><a href="../Seabright/ObjectBase/ClassMethods.html">Seabright::ObjectBase::ClassMethods</a>
+  
+    <li><a href="../Seabright/RedisObject.html">Seabright::RedisObject</a>
+  
+    <li><a href="../Seabright/RedisObject.html">Seabright::RedisObject</a>
+  
+    <li><a href="../Seabright/References.html">Seabright::References</a>
+  
+    <li><a href="../Seabright/Storage.html">Seabright::Storage</a>
+  
+    <li><a href="../Seabright/Storage/ClassMethods.html">Seabright::Storage::ClassMethods</a>
+  
+    <li><a href="../Seabright/Storage/MySQL.html">Seabright::Storage::MySQL</a>
+  
+    <li><a href="../Seabright/Storage/Redis.html">Seabright::Storage::Redis</a>
+  
+    <li><a href="../Seabright/Template.html">Seabright::Template</a>
+  
+    <li><a href="../Seabright/Template/ClassMethods.html">Seabright::Template::ClassMethods</a>
+  
+    <li><a href="../Seabright/Timestamps.html">Seabright::Timestamps</a>
+  
+    <li><a href="../Seabright/Timestamps/ClassMethods.html">Seabright::Timestamps::ClassMethods</a>
+  
+    <li><a href="../Seabright/Types.html">Seabright::Types</a>
+  
+    <li><a href="../Seabright/Types/ClassMethods.html">Seabright::Types::ClassMethods</a>
+  
+    <li><a href="../Object.html">Object</a>
+  
+    <li><a href="../Seabright/RedisObject.html">Object::RedisObject</a>
+  
+  </ul>
+</nav>
+
+  </div>
+</nav>
+
+<div id="documentation">
+  <h1 class="module">module Seabright::ObjectBase</h1>
+
+  <div id="description" class="description">
+    
+  </div><!-- description -->
+
+  
+  
+  
+  <section id="5Buntitled-5D" class="documentation-section">
+    
+
+    
+
+    
+
+    
+
+    <!-- Methods -->
+    
+     <section id="public-class-5Buntitled-5D-method-details" class="method-section section">
+      <h3 class="section-header">Public Class Methods</h3>
+
+    
+      <div id="method-c-new" class="method-detail ">
+        
+        <div class="method-heading">
+          <span class="method-name">new</span><span
+            class="method-args">(ident={}, prnt = nil)</span>
+          <span class="method-click-advice">click to toggle source</span>
+        </div>
+        
+
+        <div class="method-description">
+          
+          
+          
+
+          
+          <div class="method-source-code" id="new-source">
+            <pre><span class="ruby-comment"># File lib/redis_object/base.rb, line 4</span>
+<span class="ruby-keyword">def</span> <span class="ruby-identifier">initialize</span>(<span class="ruby-identifier">ident</span>={}, <span class="ruby-identifier">prnt</span> = <span class="ruby-keyword">nil</span>)
+        <span class="ruby-keyword">if</span> <span class="ruby-identifier">prnt</span> <span class="ruby-operator">&amp;&amp;</span> <span class="ruby-identifier">prnt</span>.<span class="ruby-identifier">class</span> <span class="ruby-operator">!=</span> <span class="ruby-constant">String</span>
+                <span class="ruby-ivar">@parent</span> = <span class="ruby-identifier">prnt</span>
+                <span class="ruby-ivar">@parent_id</span> = <span class="ruby-identifier">prnt</span>.<span class="ruby-identifier">hkey</span>
+        <span class="ruby-keyword">else</span>
+                <span class="ruby-ivar">@parent_id</span> = <span class="ruby-identifier">prnt</span>
+        <span class="ruby-keyword">end</span>
+        <span class="ruby-keyword">if</span> <span class="ruby-identifier">ident</span> <span class="ruby-operator">&amp;&amp;</span> <span class="ruby-identifier">ident</span>.<span class="ruby-identifier">class</span> <span class="ruby-operator">==</span> <span class="ruby-constant">String</span>
+                <span class="ruby-identifier">load</span>(<span class="ruby-identifier">ident</span>)
+        <span class="ruby-keyword">elsif</span> <span class="ruby-identifier">ident</span> <span class="ruby-operator">&amp;&amp;</span> <span class="ruby-identifier">ident</span>.<span class="ruby-identifier">class</span> <span class="ruby-operator">==</span> <span class="ruby-constant">Hash</span>
+                <span class="ruby-identifier">ident</span>[<span class="ruby-identifier">id_sym</span>] <span class="ruby-operator">||=</span> <span class="ruby-identifier">generate_id</span>
+                <span class="ruby-keyword">if</span> <span class="ruby-identifier">load</span>(<span class="ruby-identifier">ident</span>[<span class="ruby-identifier">id_sym</span>])
+                        <span class="ruby-ivar">@data</span> = <span class="ruby-identifier">ident</span>
+                <span class="ruby-keyword">end</span>
+        <span class="ruby-keyword">end</span>
+<span class="ruby-keyword">end</span></pre>
+          </div><!-- new-source -->
+          
+        </div>
+
+        
+
+        
+      </div><!-- new-method -->
+
+    
+    </section><!-- public-class-method-details -->
+  
+     <section id="public-instance-5Buntitled-5D-method-details" class="method-section section">
+      <h3 class="section-header">Public Instance Methods</h3>
+
+    
+      <div id="method-i-5B-5D" class="method-detail method-alias">
+        
+        <div class="method-heading">
+          <span class="method-name">[]</span><span
+            class="method-args">(k)</span>
+          <span class="method-click-advice">click to toggle source</span>
+        </div>
+        
+
+        <div class="method-description">
+          
+          
+          
+
+          
+        </div>
+
+        
+
+        
+        <div class="aliases">
+          Alias for: <a href="ObjectBase.html#method-i-get">get</a>
+        </div>
+        
+      </div><!-- 5B-5D-method -->
+
+    
+      <div id="method-i-5B-5D-3D" class="method-detail method-alias">
+        
+        <div class="method-heading">
+          <span class="method-name">[]=</span><span
+            class="method-args">(k,v)</span>
+          <span class="method-click-advice">click to toggle source</span>
+        </div>
+        
+
+        <div class="method-description">
+          
+          
+          
+
+          
+        </div>
+
+        
+
+        
+        <div class="aliases">
+          Alias for: <a href="ObjectBase.html#method-i-set">set</a>
+        </div>
+        
+      </div><!-- 5B-5D-3D-method -->
+
+    
+      <div id="method-i-actual" class="method-detail method-alias">
+        
+        <div class="method-heading">
+          <span class="method-name">actual</span><span
+            class="method-args">()</span>
+          <span class="method-click-advice">click to toggle source</span>
+        </div>
+        
+
+        <div class="method-description">
+          
+          
+          
+
+          
+        </div>
+
+        
+
+        
+        <div class="aliases">
+          Alias for: <a href="ObjectBase.html#method-i-raw">raw</a>
+        </div>
+        
+      </div><!-- actual-method -->
+
+    
+      <div id="method-i-delete-21" class="method-detail ">
+        
+        <div class="method-heading">
+          <span class="method-name">delete!</span><span
+            class="method-args">()</span>
+          <span class="method-click-advice">click to toggle source</span>
+        </div>
+        
+
+        <div class="method-description">
+          
+          
+          
+
+          
+          <div class="method-source-code" id="delete-21-source">
+            <pre><span class="ruby-comment"># File lib/redis_object/base.rb, line 91</span>
+<span class="ruby-keyword">def</span> <span class="ruby-identifier">delete!</span>
+        <span class="ruby-identifier">store</span>.<span class="ruby-identifier">del</span> <span class="ruby-identifier">key</span>
+        <span class="ruby-identifier">store</span>.<span class="ruby-identifier">del</span> <span class="ruby-identifier">hkey</span>
+        <span class="ruby-identifier">store</span>.<span class="ruby-identifier">srem</span>(<span class="ruby-keyword">self</span>.<span class="ruby-identifier">class</span>.<span class="ruby-identifier">plname</span>, <span class="ruby-identifier">key</span>)
+        <span class="ruby-keyword">if</span> <span class="ruby-identifier">parent</span>
+                <span class="ruby-identifier">parent</span>.<span class="ruby-identifier">delete_child</span> <span class="ruby-keyword">self</span>
+        <span class="ruby-keyword">end</span>
+        <span class="ruby-identifier">store</span>.<span class="ruby-identifier">smembers</span>(<span class="ruby-identifier">ref_key</span>).<span class="ruby-identifier">each</span> <span class="ruby-keyword">do</span> <span class="ruby-operator">|</span><span class="ruby-identifier">k</span><span class="ruby-operator">|</span>
+                <span class="ruby-keyword">if</span> <span class="ruby-keyword">self</span>.<span class="ruby-identifier">class</span>.<span class="ruby-identifier">find_by_key</span>(<span class="ruby-identifier">k</span>)
+                        
+                <span class="ruby-keyword">end</span>
+        <span class="ruby-keyword">end</span>
+<span class="ruby-keyword">end</span></pre>
+          </div><!-- delete-21-source -->
+          
+        </div>
+
+        
+
+        
+      </div><!-- delete-21-method -->
+
+    
+      <div id="method-i-dump" class="method-detail ">
+        
+        <div class="method-heading">
+          <span class="method-name">dump</span><span
+            class="method-args">(prnt=nil)</span>
+          <span class="method-click-advice">click to toggle source</span>
+        </div>
+        
+
+        <div class="method-description">
+          
+          
+          
+
+          
+          <div class="method-source-code" id="dump-source">
+            <pre><span class="ruby-comment"># File lib/redis_object/base.rb, line 45</span>
+<span class="ruby-keyword">def</span> <span class="ruby-identifier">dump</span>(<span class="ruby-identifier">prnt</span>=<span class="ruby-keyword">nil</span>)
+        <span class="ruby-identifier">require</span> <span class="ruby-string">&quot;utf8_utils&quot;</span>
+        <span class="ruby-identifier">out</span> = [<span class="ruby-node">&quot;puts \&quot;Creating: #{id}\&quot;&quot;</span>]
+        <span class="ruby-identifier">s_id</span> = (<span class="ruby-identifier">prnt</span> <span class="ruby-operator">?</span> <span class="ruby-node">&quot;#{prnt.id} #{id}&quot;</span> <span class="ruby-operator">:</span> <span class="ruby-identifier">id</span>).<span class="ruby-identifier">gsub</span>(<span class="ruby-regexp">%r\W/</span>,<span class="ruby-string">&quot;_&quot;</span>)
+        <span class="ruby-identifier">out</span> <span class="ruby-operator">&lt;&lt;</span> <span class="ruby-node">&quot;a#{s_id} = #{self.class.cname}.new(#{actual.to_s.tidy_bytes},#{prnt.id})&quot;</span>
+        <span class="ruby-identifier">out</span> <span class="ruby-operator">&lt;&lt;</span> <span class="ruby-node">&quot;a#{prnt.id.gsub(/\W/,&quot;_&quot;)} &lt;&lt; a#{s_id}&quot;</span> <span class="ruby-keyword">if</span> <span class="ruby-identifier">prnt</span>
+        <span class="ruby-identifier">out</span> <span class="ruby-operator">&lt;&lt;</span> <span class="ruby-node">&quot;a#{s_id}.save&quot;</span>
+        <span class="ruby-identifier">out</span>.<span class="ruby-identifier">join</span>(<span class="ruby-string">&quot;\n&quot;</span>)
+<span class="ruby-keyword">end</span></pre>
+          </div><!-- dump-source -->
+          
+        </div>
+
+        
+
+        
+      </div><!-- dump-method -->
+
+    
+      <div id="method-i-generate_id" class="method-detail ">
+        
+        <div class="method-heading">
+          <span class="method-name">generate_id</span><span
+            class="method-args">()</span>
+          <span class="method-click-advice">click to toggle source</span>
+        </div>
+        
+
+        <div class="method-description">
+          
+          
+          
+
+          
+          <div class="method-source-code" id="generate_id-source">
+            <pre><span class="ruby-comment"># File lib/redis_object/base.rb, line 25</span>
+<span class="ruby-keyword">def</span> <span class="ruby-identifier">generate_id</span>
+        <span class="ruby-identifier">v</span> = <span class="ruby-identifier">new_id</span>
+        <span class="ruby-keyword">while</span> <span class="ruby-keyword">self</span>.<span class="ruby-identifier">class</span>.<span class="ruby-identifier">exists?</span>(<span class="ruby-identifier">v</span>) <span class="ruby-keyword">do</span>
+                <span class="ruby-identifier">puts</span> <span class="ruby-node">&quot;[RedisObject] Collision at id: #{v}&quot;</span> <span class="ruby-keyword">if</span> <span class="ruby-constant">DEBUG</span>
+                <span class="ruby-identifier">v</span> = <span class="ruby-identifier">new_id</span>
+        <span class="ruby-keyword">end</span>
+        <span class="ruby-identifier">puts</span> <span class="ruby-node">&quot;[RedisObject] Reserving key: #{v}&quot;</span> <span class="ruby-keyword">if</span> <span class="ruby-constant">DEBUG</span>
+        <span class="ruby-identifier">reserve</span>(<span class="ruby-identifier">v</span>)
+        <span class="ruby-identifier">v</span>
+<span class="ruby-keyword">end</span></pre>
+          </div><!-- generate_id-source -->
+          
+        </div>
+
+        
+
+        
+      </div><!-- generate_id-method -->
+
+    
+      <div id="method-i-get" class="method-detail ">
+        
+        <div class="method-heading">
+          <span class="method-name">get</span><span
+            class="method-args">(k)</span>
+          <span class="method-click-advice">click to toggle source</span>
+        </div>
+        
+
+        <div class="method-description">
+          
+          
+          
+
+          
+          <div class="method-source-code" id="get-source">
+            <pre><span class="ruby-comment"># File lib/redis_object/base.rb, line 115</span>
+<span class="ruby-keyword">def</span> <span class="ruby-identifier">get</span>(<span class="ruby-identifier">k</span>)
+        <span class="ruby-identifier">val</span> = <span class="ruby-ivar">@data</span> <span class="ruby-operator">?</span> <span class="ruby-ivar">@data</span>[<span class="ruby-identifier">k</span>] <span class="ruby-operator">:</span> <span class="ruby-identifier">store</span>.<span class="ruby-identifier">hget</span>(<span class="ruby-identifier">hkey</span>, <span class="ruby-identifier">k</span>.<span class="ruby-identifier">to_s</span>)
+<span class="ruby-keyword">end</span></pre>
+          </div><!-- get-source -->
+          
+        </div>
+
+        
+        <div class="aliases">
+          Also aliased as: <a href="ObjectBase.html#method-i-5B-5D">[]</a>
+        </div>
+        
+
+        
+      </div><!-- get-method -->
+
+    
+      <div id="method-i-id" class="method-detail ">
+        
+        <div class="method-heading">
+          <span class="method-name">id</span><span
+            class="method-args">()</span>
+          <span class="method-click-advice">click to toggle source</span>
+        </div>
+        
+
+        <div class="method-description">
+          
+          
+          
+
+          
+          <div class="method-source-code" id="id-source">
+            <pre><span class="ruby-comment"># File lib/redis_object/base.rb, line 67</span>
+<span class="ruby-keyword">def</span> <span class="ruby-identifier">id</span>
+        <span class="ruby-ivar">@id</span> <span class="ruby-operator">||</span> <span class="ruby-identifier">set</span>(<span class="ruby-value">:id_sym</span>, <span class="ruby-identifier">get</span>(<span class="ruby-value">:id_sym</span>) <span class="ruby-operator">||</span> <span class="ruby-identifier">generate_id</span>)
+<span class="ruby-keyword">end</span></pre>
+          </div><!-- id-source -->
+          
+        </div>
+
+        
+
+        
+      </div><!-- id-method -->
+
+    
+      <div id="method-i-inspect" class="method-detail method-alias">
+        
+        <div class="method-heading">
+          <span class="method-name">inspect</span><span
+            class="method-args">()</span>
+          <span class="method-click-advice">click to toggle source</span>
+        </div>
+        
+
+        <div class="method-description">
+          
+          
+          
+
+          
+        </div>
+
+        
+
+        
+        <div class="aliases">
+          Alias for: <a href="ObjectBase.html#method-i-raw">raw</a>
+        </div>
+        
+      </div><!-- inspect-method -->
+
+    
+      <div id="method-i-load" class="method-detail ">
+        
+        <div class="method-heading">
+          <span class="method-name">load</span><span
+            class="method-args">(o_id)</span>
+          <span class="method-click-advice">click to toggle source</span>
+        </div>
+        
+
+        <div class="method-description">
+          
+          
+          
+
+          
+          <div class="method-source-code" id="load-source">
+            <pre><span class="ruby-comment"># File lib/redis_object/base.rb, line 71</span>
+<span class="ruby-keyword">def</span> <span class="ruby-identifier">load</span>(<span class="ruby-identifier">o_id</span>)
+        <span class="ruby-ivar">@id</span> = <span class="ruby-identifier">o_id</span>
+        <span class="ruby-keyword">true</span>
+<span class="ruby-keyword">end</span></pre>
+          </div><!-- load-source -->
+          
+        </div>
+
+        
+
+        
+      </div><!-- load-method -->
+
+    
+      <div id="method-i-new_id" class="method-detail ">
+        
+        <div class="method-heading">
+          <span class="method-name">new_id</span><span
+            class="method-args">()</span>
+          <span class="method-click-advice">click to toggle source</span>
+        </div>
+        
+
+        <div class="method-description">
+          
+          
+          
+
+          
+          <div class="method-source-code" id="new_id-source">
+            <pre><span class="ruby-comment"># File lib/redis_object/base.rb, line 21</span>
+<span class="ruby-keyword">def</span> <span class="ruby-identifier">new_id</span>
+        <span class="ruby-identifier">rand</span>(<span class="ruby-value">36</span><span class="ruby-operator">**</span><span class="ruby-value">8</span>).<span class="ruby-identifier">to_s</span>(<span class="ruby-value">36</span>)
+<span class="ruby-keyword">end</span></pre>
+          </div><!-- new_id-source -->
+          
+        </div>
+
+        
+
+        
+      </div><!-- new_id-method -->
+
+    
+      <div id="method-i-parent" class="method-detail ">
+        
+        <div class="method-heading">
+          <span class="method-name">parent</span><span
+            class="method-args">()</span>
+          <span class="method-click-advice">click to toggle source</span>
+        </div>
+        
+
+        <div class="method-description">
+          
+          
+          
+
+          
+          <div class="method-source-code" id="parent-source">
+            <pre><span class="ruby-comment"># File lib/redis_object/base.rb, line 55</span>
+<span class="ruby-keyword">def</span> <span class="ruby-identifier">parent</span>
+        <span class="ruby-ivar">@parent</span> <span class="ruby-operator">||=</span> <span class="ruby-ivar">@parent_id</span> <span class="ruby-operator">?</span> <span class="ruby-identifier">find_by_key</span>(<span class="ruby-ivar">@parent_id</span>) <span class="ruby-operator">:</span> <span class="ruby-keyword">nil</span>
+<span class="ruby-keyword">end</span></pre>
+          </div><!-- parent-source -->
+          
+        </div>
+
+        
+
+        
+      </div><!-- parent-method -->
+
+    
+      <div id="method-i-parent-3D" class="method-detail ">
+        
+        <div class="method-heading">
+          <span class="method-name">parent=</span><span
+            class="method-args">(obj)</span>
+          <span class="method-click-advice">click to toggle source</span>
+        </div>
+        
+
+        <div class="method-description">
+          
+          
+          
+
+          
+          <div class="method-source-code" id="parent-3D-source">
+            <pre><span class="ruby-comment"># File lib/redis_object/base.rb, line 59</span>
+<span class="ruby-keyword">def</span> <span class="ruby-identifier">parent=</span>(<span class="ruby-identifier">obj</span>)
+        <span class="ruby-ivar">@parent</span> = <span class="ruby-identifier">obj</span>.<span class="ruby-identifier">class</span> <span class="ruby-operator">==</span> <span class="ruby-constant">String</span> <span class="ruby-operator">?</span> <span class="ruby-keyword">self</span>.<span class="ruby-identifier">find_by_key</span>(<span class="ruby-identifier">obj</span>) <span class="ruby-operator">:</span> <span class="ruby-identifier">obj</span>
+        <span class="ruby-keyword">if</span> <span class="ruby-ivar">@parent</span>
+                <span class="ruby-ivar">@parent_id</span> = <span class="ruby-identifier">obj</span>.<span class="ruby-identifier">hkey</span>
+                <span class="ruby-identifier">set</span>(<span class="ruby-value">:parent</span>, <span class="ruby-ivar">@parent_id</span>)
+        <span class="ruby-keyword">end</span>
+<span class="ruby-keyword">end</span></pre>
+          </div><!-- parent-3D-source -->
+          
+        </div>
+
+        
+
+        
+      </div><!-- parent-3D-method -->
+
+    
+      <div id="method-i-raw" class="method-detail ">
+        
+        <div class="method-heading">
+          <span class="method-name">raw</span><span
+            class="method-args">()</span>
+          <span class="method-click-advice">click to toggle source</span>
+        </div>
+        
+
+        <div class="method-description">
+          
+          
+          
+
+          
+          <div class="method-source-code" id="raw-source">
+            <pre><span class="ruby-comment"># File lib/redis_object/base.rb, line 105</span>
+<span class="ruby-keyword">def</span> <span class="ruby-identifier">raw</span>
+        <span class="ruby-keyword">if</span> <span class="ruby-ivar">@data</span>
+                <span class="ruby-ivar">@data</span>
+        <span class="ruby-keyword">else</span>
+                <span class="ruby-identifier">store</span>.<span class="ruby-identifier">hgetall</span>(<span class="ruby-identifier">hkey</span>).<span class="ruby-identifier">inject</span>({}) {<span class="ruby-operator">|</span><span class="ruby-identifier">acc</span>,<span class="ruby-identifier">k</span><span class="ruby-operator">|</span> <span class="ruby-identifier">acc</span>[<span class="ruby-identifier">k</span>[<span class="ruby-value">0</span>].<span class="ruby-identifier">to_sym</span>] = <span class="ruby-identifier">enforce_format</span>(<span class="ruby-identifier">k</span>[<span class="ruby-value">0</span>],<span class="ruby-identifier">k</span>[<span class="ruby-value">1</span>]); <span class="ruby-identifier">acc</span> }
+        <span class="ruby-keyword">end</span>
+<span class="ruby-keyword">end</span></pre>
+          </div><!-- raw-source -->
+          
+        </div>
+
+        
+        <div class="aliases">
+          Also aliased as: <a href="ObjectBase.html#method-i-inspect">inspect</a>, <a href="ObjectBase.html#method-i-actual">actual</a>
+        </div>
+        
+
+        
+      </div><!-- raw-method -->
+
+    
+      <div id="method-i-reserve" class="method-detail ">
+        
+        <div class="method-heading">
+          <span class="method-name">reserve</span><span
+            class="method-args">(k)</span>
+          <span class="method-click-advice">click to toggle source</span>
+        </div>
+        
+
+        <div class="method-description">
+          
+          
+          
+
+          
+          <div class="method-source-code" id="reserve-source">
+            <pre><span class="ruby-comment"># File lib/redis_object/base.rb, line 36</span>
+<span class="ruby-keyword">def</span> <span class="ruby-identifier">reserve</span>(<span class="ruby-identifier">k</span>)
+        <span class="ruby-identifier">store</span>.<span class="ruby-identifier">set</span>(<span class="ruby-identifier">reserve_key</span>(<span class="ruby-identifier">k</span>),<span class="ruby-constant">Time</span>.<span class="ruby-identifier">now</span>.<span class="ruby-identifier">to_s</span>)
+<span class="ruby-keyword">end</span></pre>
+          </div><!-- reserve-source -->
+          
+        </div>
+
+        
+
+        
+      </div><!-- reserve-method -->
+
+    
+      <div id="method-i-save" class="method-detail ">
+        
+        <div class="method-heading">
+          <span class="method-name">save</span><span
+            class="method-args">()</span>
+          <span class="method-click-advice">click to toggle source</span>
+        </div>
+        
+
+        <div class="method-description">
+          
+          
+          
+
+          
+          <div class="method-source-code" id="save-source">
+            <pre><span class="ruby-comment"># File lib/redis_object/base.rb, line 76</span>
+<span class="ruby-keyword">def</span> <span class="ruby-identifier">save</span>
+        <span class="ruby-identifier">set</span>(<span class="ruby-value">:class</span>, <span class="ruby-keyword">self</span>.<span class="ruby-identifier">class</span>.<span class="ruby-identifier">name</span>)
+        <span class="ruby-identifier">set</span>(<span class="ruby-identifier">id_sym</span>,<span class="ruby-identifier">id</span>)
+        <span class="ruby-identifier">set</span>(<span class="ruby-value">:key</span>, <span class="ruby-identifier">key</span>)
+        <span class="ruby-keyword">if</span> <span class="ruby-ivar">@data</span>
+                <span class="ruby-identifier">saving</span> = <span class="ruby-ivar">@data</span>
+                <span class="ruby-ivar">@data</span> = <span class="ruby-keyword">false</span>
+                <span class="ruby-identifier">saving</span>.<span class="ruby-identifier">each</span> <span class="ruby-keyword">do</span> <span class="ruby-operator">|</span><span class="ruby-identifier">k</span>,<span class="ruby-identifier">v</span><span class="ruby-operator">|</span>
+                        <span class="ruby-identifier">set</span>(<span class="ruby-identifier">k</span>,<span class="ruby-identifier">v</span>)
+                <span class="ruby-keyword">end</span>
+        <span class="ruby-keyword">end</span>
+        <span class="ruby-identifier">store</span>.<span class="ruby-identifier">sadd</span>(<span class="ruby-keyword">self</span>.<span class="ruby-identifier">class</span>.<span class="ruby-identifier">cname</span>.<span class="ruby-identifier">pluralize</span>, <span class="ruby-identifier">key</span>)
+        <span class="ruby-identifier">store</span>.<span class="ruby-identifier">del</span>(<span class="ruby-identifier">reserve_key</span>)
+<span class="ruby-keyword">end</span></pre>
+          </div><!-- save-source -->
+          
+        </div>
+
+        
+
+        
+      </div><!-- save-method -->
+
+    
+      <div id="method-i-set" class="method-detail ">
+        
+        <div class="method-heading">
+          <span class="method-name">set</span><span
+            class="method-args">(k,v)</span>
+          <span class="method-click-advice">click to toggle source</span>
+        </div>
+        
+
+        <div class="method-description">
+          
+          
+          
+
+          
+          <div class="method-source-code" id="set-source">
+            <pre><span class="ruby-comment"># File lib/redis_object/base.rb, line 120</span>
+<span class="ruby-keyword">def</span> <span class="ruby-identifier">set</span>(<span class="ruby-identifier">k</span>,<span class="ruby-identifier">v</span>)
+        <span class="ruby-ivar">@data</span> <span class="ruby-operator">?</span> <span class="ruby-ivar">@data</span>[<span class="ruby-identifier">k</span>] = <span class="ruby-identifier">v</span> <span class="ruby-operator">:</span> <span class="ruby-identifier">store</span>.<span class="ruby-identifier">hset</span>(<span class="ruby-identifier">hkey</span>, <span class="ruby-identifier">k</span>.<span class="ruby-identifier">to_s</span>.<span class="ruby-identifier">gsub</span>(<span class="ruby-regexp">%r\=$/</span>,<span class="ruby-string">''</span>), <span class="ruby-identifier">v</span>)
+        <span class="ruby-identifier">v</span>
+<span class="ruby-keyword">end</span></pre>
+          </div><!-- set-source -->
+          
+        </div>
+
+        
+        <div class="aliases">
+          Also aliased as: <a href="ObjectBase.html#method-i-5B-5D-3D">[]=</a>
+        </div>
+        
+
+        
+      </div><!-- set-method -->
+
+    
+      <div id="method-i-to_json" class="method-detail ">
+        
+        <div class="method-heading">
+          <span class="method-name">to_json</span><span
+            class="method-args">()</span>
+          <span class="method-click-advice">click to toggle source</span>
+        </div>
+        
+
+        <div class="method-description">
+          
+          
+          
+
+          
+          <div class="method-source-code" id="to_json-source">
+            <pre><span class="ruby-comment"># File lib/redis_object/base.rb, line 40</span>
+<span class="ruby-keyword">def</span> <span class="ruby-identifier">to_json</span>
+        <span class="ruby-identifier">require</span> <span class="ruby-string">'yajl'</span>
+        <span class="ruby-constant">Yajl</span><span class="ruby-operator">::</span><span class="ruby-constant">Encoder</span>.<span class="ruby-identifier">encode</span>(<span class="ruby-identifier">actual</span>)
+<span class="ruby-keyword">end</span></pre>
+          </div><!-- to_json-source -->
+          
+        </div>
+
+        
+
+        
+      </div><!-- to_json-method -->
+
+    
+    </section><!-- public-instance-method-details -->
+  
+  </section><!-- 5Buntitled-5D -->
+
+</div><!-- documentation -->
+
+
+<footer id="validator-badges">
+  <p><a href="http://validator.w3.org/check/referer">[Validate]</a>
+  <p>Generated by <a href="https://github.com/rdoc/rdoc">RDoc</a> 3.12.
+  <p>Generated with the <a href="http://deveiate.org/projects/Darkfish-Rdoc/">Darkfish Rdoc Generator</a> 3.
+</footer>
+
