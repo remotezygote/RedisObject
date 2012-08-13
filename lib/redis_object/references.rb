@@ -1,15 +1,15 @@
 module Seabright
 	module References
 		
-		def ref_key(ident = nil, prnt = nil)
+		def ref_key(ident = nil)
 			"#{hkey}:backreferences"
 		end
 		
 		def reference(obj)
-			name = obj.class.plname.downcase.to_sym
+			name = obj.class.plname.underscore
 			store.sadd hkey_col, name
-			collections[name] ||= Seabright::Collection.load(name,self)
-			collections[name] << obj.hkey
+			collections[name.to_s] ||= Seabright::Collection.load(name,self)
+			collections[name.to_s] << obj.hkey
 			obj.referenced_by self
 		end
 		alias_method :<<, :reference

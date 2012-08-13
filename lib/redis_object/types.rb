@@ -10,7 +10,7 @@ module Seabright
 		end
 		
 		def save_format(k,v)
-			v && fmt = self.class.save_formats[k.to_sym] ? send(fmt,v) : v
+			v && (fmt = self.class.save_formats[k.to_s.gsub(/\=$/,'').to_sym]) ? send(fmt,v) : v
 		end
 		
 		def format_date(val)
