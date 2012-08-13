@@ -1,6 +1,8 @@
 require 'active_support/inflector'
 require 'active_support/core_ext/date_time/conversions'
 
+require "redis_object/storage"
+
 require "redis_object/base"
 require "redis_object/storage"
 require "redis_object/keys"

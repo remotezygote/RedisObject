@@ -2,22 +2,21 @@ module Seabright
 	
 	module Collections
 		
-		def dump(prnt=nil)
+		def dump
 			require "utf8_utils"
 			out = ["puts \"Creating: #{id}\""]
-			s_id = (prnt ? "#{prnt.id} #{id}" : id).gsub(/\W/,"_")
-			out << "a#{s_id} = #{self.class.cname}.new(#{actual.to_s.tidy_bytes},#{prnt.id})"
+			s_id = id.gsub(/\W/,"_")
+			out << "a#{s_id} = #{self.class.cname}.new(#{actual.to_s.tidy_bytes})"
 			collections.each do |col|
 				col.each do |sobj|
 					out << sobj.dump(self)
 				end
 			end
-			out << "a#{prnt.id.gsub(/\W/,"_")} << a#{s_id}" if prnt
 			out << "a#{s_id}.save"
 			out.join("\n")
 		end
 		
-		def hkey_col(ident = nil, prnt = nil)
+		def hkey_col(ident = nil)
 			"#{hkey}:collections"
 		end
 		
@@ -37,7 +36,7 @@ module Seabright
 		end
 		
 		def delete_child(obj)
-			if col = collections[obj.class.plname.downcase.to_sym]
+			if col = collections[obj.class.plname.underscore.to_sym]
 				col.delete obj.hkey
 			end
 		end
@@ -45,19 +44,25 @@ module Seabright
 		def <<(obj)
 			obj.parent = self
 			obj.save
-			name = obj.class.plname.downcase.to_sym
+			name = obj.class.plname.underscore.to_sym
 			store.sadd hkey_col, name
-			collections[name] ||= Seabright::Collection.load(name,self)
-			collections[name] << obj.hkey
+			collections[name.to_s] ||= Seabright::Collection.load(name,self)
+			collections[name.to_s] << obj.hkey
 		end
 		alias_method :push, :<<
 		
 		def get(k)
-			if collections[k.to_s]
-				get_collection(k.to_s)
+			if has_collection?(k)
+				get_collection(k)
+			elsif has_collection?(pk = k.to_s.pluralize)
+				get_collection(pk).first
 			else
 				super(k)
 			end
+		end
+		
+		def has_collection?(name)
+			store.sismember(hkey_col,name.to_s)
 		end
 		
 		def get_collection(name)
@@ -70,14 +75,14 @@ module Seabright
 		end
 		
 		def set(k,v)
-			@data ? super(k,v) : collections[k.to_sym] ? get_collection(k).replace(v) : super(k,v)
+			@data ? super(k,v) : collections[k.to_s] ? get_collection(k.to_s).replace(v) : super(k,v)
 			v
 		end
 		
 		module ClassMethods
 			
-			def hkey_col(ident = id, prnt = nil)
-				"#{hkey(ident,prnt)}:collections"
+			def hkey_col(ident = id)
+				"#{hkey(ident)}:collections"
 			end
 			
 		end
@@ -92,14 +97,14 @@ module Seabright
 	class Collection < Array
 		
 		def initialize(name,parent)
-			@name = name
+			@name = name.to_s
 			@parent = parent
 		end
 		
 		def indexed(index,num=5,reverse=false)
 			out = []
 			store.send(reverse ? :zrevrange : :zrange,index_key(index), 0, num).each do |member|
-				if a = class_const.find_by_key(member)
+				if a = RedisObject.find_by_key(member)
 					out << a
 				else
 					store.zrem(index_key(index),member)
@@ -117,16 +122,25 @@ module Seabright
 		end
 		
 		def find(k)
-			real_at item_key(k)
-			# each do |a|
-			# 	return a if a.id == k && include?(a.hkey)
-			# end
-			# return nil
+			if k.is_a? String
+				real_at item_key(k)
+			elsif k.is_a? Hash
+				each do |i|
+					return i if k.map {|hk,va| i.get(hk)==va }.all?
+				end
+			end
+			return nil
 		end
 		alias_method :[], :find
 		
+		def match(pkt)
+			each do |i|
+				yield i if pkt.map {|hk,va| i.get(hk)==va }.all?
+			end
+		end
+		
 		def real_at(key)
-			class_const.find_by_key(key)
+			RedisObject.find_by_key(key)
 		end
 		
 		# def [](idx)
@@ -136,31 +150,35 @@ module Seabright
 		def objects
 			out = []
 			each_index do |key|
-				a = class_const.find_by_key(at(key))
+				a = RedisObject.find_by_key(at(key))
 				out.push a if a
 			end
 			out
 		end
 		
 		def first
-			class_const.find_by_key(super)
+			RedisObject.find_by_key(super)
 		end
 		
 		def last
-			class_const.find_by_key(super)
+			RedisObject.find_by_key(super)
 		end
 		
 		def each
 			each_index do |key|
-				a = class_const.find_by_key(at(key))
+				a = RedisObject.find_by_key(at(key))
 				yield a if a
 			end
+		end
+
+		def map(&block)
+			objects.map(&block)
 		end
 		
 		def select(&block)
 			out = []
 			each_index do |key|
-				a = class_const.find_by_key(at(key))
+				a = RedisObject.find_by_key(at(key))
 				out.push(a) if block.call(a)
 			end
 			out
@@ -191,7 +209,7 @@ module Seabright
 		class << self
 			
 			def load(name,parent)
-				out = self.new(name,parent)
+				out = new(name,parent)
 				out.replace store.smembers(out.key)
 				out
 			end

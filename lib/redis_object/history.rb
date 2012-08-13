@@ -16,7 +16,7 @@ module Seabright
 			end
 		end
 		
-		def history_key(ident = nil, prnt = nil)
+		def history_key(ident = nil)
 			"#{key}_history"
 		end
 		
@@ -35,8 +35,8 @@ module Seabright
 				@@save_history ||= false
 			end
 			
-			def history_key(ident = id, prnt = nil)
-				"#{key(ident,prnt)}_history"
+			def history_key(ident = id)
+				"#{key(ident)}_history"
 			end
 			
 		end
