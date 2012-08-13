@@ -13,7 +13,7 @@ module Seabright
 		end
 		
 		def index_key(idx,extra=nil)
-			"#{parent ? "#{parent.key}:" : ""}#{self.class.plname}::#{idx}#{extra ? ":#{extra}" : ""}"
+			"#{self.class.plname}::#{idx}#{extra ? ":#{extra}" : ""}"
 		end
 		
 		def save

@@ -4,7 +4,13 @@ module Seabright
 			
 			def method_missing(sym, *args, &block)
 				puts "[Storage::Redis] #{sym}(#{args.inspect.gsub(/\[|\]/m,'')})" if Debug.verbose?
-				connection.send(sym,*args)
+				begin
+					connection.send(sym,*args, &block)
+				rescue ::Redis::InheritedError => err
+					puts err.inspect if DEBUG
+					reset
+					connection.send(sym,*args, &block)
+				end
 			end
 			
 			private

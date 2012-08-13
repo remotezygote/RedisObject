@@ -1,19 +1,15 @@
 module Seabright
 	module ObjectBase
 		
-		def initialize(ident={}, prnt = nil)
-			if prnt && prnt.class != String
-				@parent = prnt
-				@parent_id = prnt.hkey
-			else
-				@parent_id = prnt
-			end
+		def initialize(ident={})
 			if ident && (ident.class == String || (ident.class == Symbol && (ident = ident.to_s)))
 				load(ident)
 			elsif ident && ident.class == Hash
 				ident[id_sym] ||= generate_id
 				if load(ident[id_sym])
-					@data = ident
+					ident.each do |k,v|
+						set(k,v)
+					end
 				end
 			end
 		end
@@ -42,30 +38,17 @@ module Seabright
 			Yajl::Encoder.encode(actual)
 		end
 		
-		def dump(prnt=nil)
+		def dump
 			require "utf8_utils"
 			out = ["puts \"Creating: #{id}\""]
-			s_id = (prnt ? "#{prnt.id} #{id}" : id).gsub(/\W/,"_")
-			out << "a#{s_id} = #{self.class.cname}.new(#{actual.to_s.tidy_bytes},#{prnt.id})"
-			out << "a#{prnt.id.gsub(/\W/,"_")} << a#{s_id}" if prnt
+			s_id = id.gsub(/\W/,"_")
+			out << "a#{s_id} = #{self.class.cname}.new(#{actual.to_s.tidy_bytes})"
 			out << "a#{s_id}.save"
 			out.join("\n")
 		end
 		
-		def parent
-			@parent ||= @parent_id ? find_by_key(@parent_id) : nil
-		end
-		
-		def parent=(obj)
-			@parent = obj.class == String ? self.find_by_key(obj) : obj
-			if @parent
-				@parent_id = obj.hkey
-				set(:parent, @parent_id)
-			end
-		end
-		
 		def id
-			@id || set(:id_sym, get(:id_sym) || generate_id)
+			@id || get(id_sym) || set(id_sym, generate_id)
 		end
 		
 		def load(o_id)
@@ -77,13 +60,6 @@ module Seabright
 			set(:class, self.class.name)
 			set(id_sym,id)
 			set(:key, key)
-			if @data
-				saving = @data
-				@data = false
-				saving.each do |k,v|
-					set(k,v)
-				end
-			end
 			store.sadd(self.class.cname.pluralize, key)
 			store.del(reserve_key)
 		end
@@ -91,9 +67,6 @@ module Seabright
 		def delete!
 			store.del key
 			store.srem(self.class.plname, key)
-			if parent
-				parent.delete_child self
-			end
 			store.smembers(ref_key).each do |k|
 				if self.class.find_by_key(k)
 					
@@ -102,25 +75,26 @@ module Seabright
 		end
 		
 		def raw
-			if @data
-				@data
-			else
-				store.hgetall(hkey).inject({}) {|acc,k| acc[k[0].to_sym] = enforce_format(k[0],k[1]); acc }
-			end
+			store.hgetall(hkey).inject({}) {|acc,k| acc[k[0].to_sym] = enforce_format(k[0],k[1]); acc }
 		end
 		alias_method :inspect, :raw
 		alias_method :actual, :raw
 		
 		def get(k)
-			val = @data ? @data[k] : store.hget(hkey, k.to_s)
+			val = store.hget(hkey, k.to_s)
 		end
 		alias_method :[], :get
 		
 		def set(k,v)
-			@data ? @data[k] = v : store.hset(hkey, k.to_s.gsub(/\=$/,''), v)
+			store.hset(hkey, k.to_s.gsub(/\=$/,''), v)
 			v
 		end
 		alias_method :[]=, :set
+		
+		def unset(*k)
+			store.hdel(hkey,*k)
+		end
+		# alias_method :delete, :unset
 		
 		private
 		
@@ -129,7 +103,7 @@ module Seabright
 		end
 		
 		def id_sym(cls=nil)
-			"#{(cls || self.class.cname).downcase}_id".to_sym
+			"#{(cls || self.class.cname).split('::').last.downcase}_id".to_sym
 		end
 		
 		module ClassMethods
@@ -168,15 +142,15 @@ module Seabright
 			
 			def each
 				store.smembers(plname).each do |member|
-					if a = find(member)
+					if a = grab(member)
 						yield a
 					end
 				end
 			end
 			
-			def grab(ident,prnt=nil)
+			def grab(ident)
 				if ident.class == String
-					return store.exists(self.hkey(ident,prnt)) ? self.new(ident,prnt) : nil
+					return store.exists(self.hkey(ident)) ? self.new(ident) : nil
 				elsif ident.class == Hash
 					each do |obj|
 						good = true
@@ -217,12 +191,9 @@ module Seabright
 			end
 			
 			def find_by_key(k)
-				if cls = store.hget(k,:class) 
+				if store.exists(k) && (cls = store.hget(k,:class))
 					o_id = store.hget(k,id_sym(cls))
-					prnt = store.hget(k,:parent)
-					if store.exists(k)
-						return deep_const_get(cls.to_sym).new(o_id,prnt)
-					end
+					return deep_const_get(cls.to_sym).new(o_id)
 				end
 				nil
 			end
@@ -249,7 +220,7 @@ module Seabright
 			end
 			
 			def id_sym(cls=nil)
-				"#{(cls || cname).downcase}_id".to_sym
+				"#{(cls || cname).split('::').last.downcase}_id".to_sym
 			end
 			
 		end
