@@ -9,6 +9,14 @@ module Seabright
 			end
 		end
 		
+		def score_format(k,v)
+			if v && fmt = self.class.score_formats[k.to_sym] 
+				send(fmt,v)
+			else 
+				0
+			end
+		end
+		
 		def save_format(k,v)
 			v && (fmt = self.class.save_formats[k.to_s.gsub(/\=$/,'').to_sym]) ? send(fmt,v) : v
 		end
@@ -17,12 +25,20 @@ module Seabright
 			val.instance_of?(DateTime) ? val : DateTime.parse(val)
 		end
 		
+		def score_date(val)
+			val.to_time.to_i
+		end
+		
 		def format_array(val)
 			eval val
 		end
 		
 		def format_number(val)
 			val.to_i
+		end
+		
+		def score_number(val)
+			Float(val)
 		end
 		
 		def format_json(val)
@@ -39,6 +55,10 @@ module Seabright
 			val=="true"
 		end
 		
+		def score_boolean(val)
+			val ? 1 : 0
+		end
+		
 		def get(k)
 			enforce_format(k,super(k))
 		end
@@ -51,15 +71,19 @@ module Seabright
 			
 			def date(k)
 				field_formats[k] = :format_date
+				score_formats[k] = :score_date
 			end
 			
 			def number(k)
 				field_formats[k] = :format_number
+				score_formats[k] = :score_number
 			end
 			
 			def bool(k)
 				field_formats[k] = :format_boolean
+				score_formats[k] = :score_boolean
 			end
+			alias_method :boolean, :bool
 			
 			def array(k)
 				field_formats[k] = :format_array
@@ -72,6 +96,10 @@ module Seabright
 			
 			def field_formats
 				@@field_formats ||= {}
+			end
+			
+			def score_formats
+				@@score_formats ||= {}
 			end
 			
 			def save_formats

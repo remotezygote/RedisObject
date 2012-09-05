@@ -3,8 +3,13 @@ module Seabright
 		
 		def update_timestamps
 			return if @@time_irrelevant
-			set(:created_at, Time.now) if !get(:created_at)
+			set(:created_at, Time.now) if !is_set?(:created_at)
 			set(:updated_at, Time.now)
+		end
+		
+		def set(k,v)
+			super(k,v)
+			set(:updated_at, Time.now) unless k.to_sym == :updated_at
 		end
 		
 		def save
@@ -18,6 +23,14 @@ module Seabright
 				@@time_irrelevant = true
 				@@sort_indices.delete(:created_at)
 				@@sort_indices.delete(:updated_at)
+			end
+			
+			def recently_created(num=5)
+				self.indexed(:created_at,num,true)
+			end
+			
+			def recently_updated(num=5)
+				self.indexed(:updated_at,num,true)
 			end
 			
 		end
