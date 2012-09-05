@@ -1,62 +1,76 @@
 module Seabright
 	module Indices
 		
-		def save_indices
-			# self.class.indices.each do |indx|
-			# 	indx.each do |key,idx|
-			# 		
-			# 	end
-			# end
-			self.class.sort_indices.each do |idx|
-				store.zadd(index_key(idx), send(idx).to_i, hkey)
+		# def save_indices
+		# 	# self.class.indices.each do |indx|
+		# 	# 	indx.each do |key,idx|
+		# 	# 		
+		# 	# 	end
+		# 	# end
+		# 	self.class.sort_indices.each do |idx|
+		# 		store.zadd(index_key(idx), send(idx).to_i, hkey)
+		# 	end
+		# end
+		
+		def index_key(idx)
+			self.class.index_key(idx)
+		end
+		
+		# def save
+		# 	super
+		# 	save_indices
+		# end
+		
+		def set(k,v)
+			super(k,v)
+			if self.class.has_sort_index?(k)
+				store.zadd(index_key(k), score_format(k,v), hkey)
 			end
-		end
-		
-		def index_key(idx,extra=nil)
-			"#{self.class.plname}::#{idx}#{extra ? ":#{extra}" : ""}"
-		end
-		
-		def save
-			super
-			save_indices
 		end
 		
 		module ClassMethods
 			
-			def indexed(index,num=5,reverse=false)
+			def indexed(idx,num=5,reverse=false,&block)
+				return indexed_yield(idx,num,reverse,&block) if block
 				out = []
-				store.send(reverse ? :zrevrange : :zrange, "#{self.plname}::#{index}", 0, num).each do |member|
-					if a = self.find_by_key(member)
-						out << a
-					else
-						# store.zrem(self.plname,member)
-					end
+				indexed_yield(idx,num,reverse) do |member|
+					out << member
 				end
 				out
 			end
 			
-			def recently_created(num=5)
-				self.indexed(:created_at,num,true)
+			def indexed_yield(idx,num=5,reverse=false,&block)
+				raise "No block specified" unless block
+				store.send(reverse ? :zrevrange : :zrange, index_key(idx), 0, num).each do |member|
+					if a = self.find_by_key(member)
+						yield a
+					end
+				end
+				nil
 			end
 			
-			def recently_updated(num=5)
-				self.indexed(:updated_at,num,true)
+			def index_key(idx)
+				"#{self.plname}::#{idx}"
 			end
 			
-			def index(opts)
-				indices << opts
-			end
-			
-			def indices
-				@@indices ||= []
-			end
+			# def index(opts)
+			# 	indices << opts
+			# end
+			# 
+			# def indices
+			# 	@@indices ||= []
+			# end
 			
 			def sort_indices
 				@@sort_indices ||= []
 			end
 			
 			def sort_by(k)
-				sort_indices << k
+				sort_indices << k.to_sym
+			end
+			
+			def has_sort_index?(k)
+				sort_indices.include?(k.to_sym)
 			end
 			
 		end

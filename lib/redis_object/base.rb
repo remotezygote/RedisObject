@@ -81,9 +81,13 @@ module Seabright
 		alias_method :actual, :raw
 		
 		def get(k)
-			val = store.hget(hkey, k.to_s)
+			store.hget(hkey, k.to_s)
 		end
 		alias_method :[], :get
+		
+		def is_set?(k)
+			store.hexists(hkey, k.to_s)
+		end
 		
 		def set(k,v)
 			store.hset(hkey, k.to_s.gsub(/\=$/,''), v)

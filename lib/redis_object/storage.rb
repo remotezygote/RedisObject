@@ -12,23 +12,42 @@ module Seabright
 		module ClassMethods
 			
 			def set_storage(adp=adapter)
-				@@adapter = adp
+				@adapter = adp
+			end
+			
+			def store(id=store_name)
+				adapters[id] ||= const_get(adapter).new(config(id))
+			end
+			
+			def configure_store(conf,id=store_name)
+				configs[id] = conf
+			end
+			
+			def use_store(id)
+				raise "Cannot use non-existent store: #{id}" unless config(id)
+				@store_name = id.to_sym
+			end
+			
+			private
+			
+			def adapters
+				$adapters ||= {}
 			end
 			
 			def adapter
-				@@adapter ||= config[:adapter].to_sym || :Redis
+				@adapter ||= config[:adapter].to_sym || :Redis
 			end
 			
-			def store
-				@@storage ||= const_get(adapter).new(config)
+			def store_name
+				@store_name ||= :global
 			end
 			
-			def configure_store(conf)
-				@@conf = conf
+			def configs
+				$conf ||= {}
 			end
 			
-			def config
-				@@conf ||= {}
+			def config(id=store_name)
+				configs[id]
 			end
 			
 		end
