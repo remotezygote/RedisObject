@@ -36,20 +36,32 @@ module Seabright
 		end
 		
 		def delete_child(obj)
-			if col = collections[obj.class.plname.underscore.to_sym]
+			if col = collections[obj.collection_name]
 				col.delete obj.hkey
 			end
 		end
 		
-		def <<(obj)
-			obj.parent = self
-			obj.save
-			name = obj.class.plname.underscore.to_sym
+		def collection_name
+			self.class.plname.underscore.to_sym
+		end
+		
+		def ref_key(ident = nil)
+			"#{hkey}:backreferences"
+		end
+		
+		def reference(obj)
+			name = obj.collection_name
 			store.sadd hkey_col, name
 			collections[name.to_s] ||= Seabright::Collection.load(name,self)
 			collections[name.to_s] << obj.hkey
+			obj.referenced_by self
 		end
-		alias_method :push, :<<
+		alias_method :<<, :reference
+		alias_method :push, :reference
+		
+		def referenced_by(obj)
+			store.sadd(ref_key,obj.hkey)
+		end
 		
 		def get(k)
 			if has_collection?(k)
@@ -101,20 +113,43 @@ module Seabright
 			@parent = parent
 		end
 		
-		def indexed(index,num=5,reverse=false)
+		def indexed(idx,num=5,reverse=false,&block)
+			return indexed_yield(idx,num,reverse,&block) if block
 			out = []
-			store.send(reverse ? :zrevrange : :zrange,index_key(index), 0, num).each do |member|
-				if a = RedisObject.find_by_key(member)
-					out << a
-				else
-					store.zrem(index_key(index),member)
-				end
+			indexed_yield(idx,num,reverse) do |member|
+				out << member
 			end
 			out
 		end
 		
-		def index_key(index)
-			"#{@parent.key}:#{class_const.name.pluralize}::#{index}"
+		def indexed_yield(idx,num=5,reverse=false,&block)
+			raise "No block specified" unless block
+			keys_by_index(idx,num,reverse) do |member|
+				if a = RedisObject.find_by_key(member)
+					yield a
+				end
+			end
+			nil
+		end
+		
+		def temp_key
+			"zintersect_temp"
+		end
+		
+		def keys_by_index(idx,num=5,reverse=false,&block)
+			keys = nil
+			store.multi do
+				store.zinterstore(temp_key, [index_key(idx), key], {:weights => ["1","0"]})
+				keys = store.send(reverse ? :zrevrange : :zrange, temp_key, 0, num)
+				store.del temp_key
+			end
+			keys.value.each do |member|
+				yield member
+			end
+		end
+		
+		def index_key(idx)
+			class_const.index_key(idx)
 		end
 		
 		def item_key(k)
@@ -123,7 +158,7 @@ module Seabright
 		
 		def find(k)
 			if k.is_a? String
-				real_at item_key(k)
+				return real_at item_key(k)
 			elsif k.is_a? Hash
 				each do |i|
 					return i if k.map {|hk,va| i.get(hk)==va }.all?
@@ -185,12 +220,12 @@ module Seabright
 		end
 		
 		def delete(obj)
-			store.srem(key,obj)
+			store.zrem(key,obj)
 			super(obj)
 		end
 		
 		def <<(obj)
-			store.sadd(key,obj)
+			store.zadd(key,store.zcount(key,"-inf", "+inf"),obj)
 			super(obj)
 		end
 		alias_method :push, :<<
@@ -210,7 +245,7 @@ module Seabright
 			
 			def load(name,parent)
 				out = new(name,parent)
-				out.replace store.smembers(out.key)
+				out.replace store.zrange(out.key,0,-1)
 				out
 			end
 			

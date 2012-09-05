@@ -7,7 +7,7 @@ module Seabright
 				begin
 					connection.send(sym,*args, &block)
 				rescue ::Redis::InheritedError => err
-					puts err.inspect if DEBUG
+					puts "Rescued: #{err.inspect}" if DEBUG
 					reset
 					connection.send(sym,*args, &block)
 				end
@@ -17,11 +17,8 @@ module Seabright
 			
 			def new_connection
 				require 'redis'
-				opts = [:path, :db, :password].inject({}) {|a,k|
-					a[k] = @config[k]
-					a
-				}
-				::Redis.new(opts)
+				puts "Connecting to Redis with: #{config_opts(:path, :db, :password).inspect}" if DEBUG
+				::Redis.new(config_opts(:path, :db, :password))
 			end
 			
 		end

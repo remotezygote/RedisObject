@@ -11,7 +11,7 @@ require "redis_object/collection"
 require "redis_object/indices"
 require "redis_object/timestamps"
 require "redis_object/history"
-require "redis_object/references"
+require "redis_object/ext/triggers"
 
 module Seabright
 	class RedisObject
@@ -24,7 +24,7 @@ module Seabright
 		include Seabright::Indices
 		include Seabright::Timestamps
 		include Seabright::History
-		include Seabright::References
+		include Seabright::Triggers
 		
 	end
 end
