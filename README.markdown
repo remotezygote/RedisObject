@@ -151,13 +151,13 @@ TODO: Make defining custom formats easier - no need to define class methods for 
 Any field that can be scored can store a sidecar index by that score. These indices can also be used to index items in a collection (internally, it is a simple Redis set intersection, so it is very fast). Timestamps are indexed by default for any object, so out of the box you can do:
 
 ```ruby
-    Person.indexed(:created_at) # all Person objects, oldest first
-    Person.indexed(:created_at, 1, true) # newest Person (index_field, number of items, reverse sort?)
-    Person.latest # always available if timestamps are on - most recently created object of type
-    john.addresses.indexed(:created_at, 3, true) # john's 3 most recent addresses
-    Person.indexed(:updated_at, -1, true) do |person|
-      # iterate through Person objects in order of update times, most recent first
-    end
+Person.indexed(:created_at) # all Person objects, oldest first
+Person.indexed(:created_at, 1, true) # newest Person (index_field, number of items, reverse sort?)
+Person.latest # always available if timestamps are on - most recently created object of type
+john.addresses.indexed(:created_at, 3, true) # john's 3 most recent addresses
+Person.indexed(:updated_at, -1, true) do |person|
+  # iterate through Person objects in order of update times, most recent first
+end
 ```
 
 Accessing indexed items always returns an Enumerator, so first/last/each/count/etc. are always usable and will access items only when iterated.
