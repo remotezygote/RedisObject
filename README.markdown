@@ -8,32 +8,32 @@ You'll need [Redis](http://redis.io).
 ## Installation
 It&apos;s hosted on [rubygems.org][rubygems].
 
-    sudo gem install redis_object
+	sudo gem install redis_object
 
 
 ## Usage
 ###  Simple Example
 ```ruby
-    class Thing < RedisObject
-      def name
-        "#{first_name} #{last_name}"
-      end
-      def name=(new_name)
-        first, last = new_name.split(" ")
-      	set(:first_name,first)
-      	set(:last_name,last)
-      end
-    end
-    a = Thing.create("an_id")
-    a.name = "Testy Testerton"
-    b = Thing.create({:first_name => "Testy", :last_name => "Testerton"})
+class Thing < RedisObject
+  def name
+    "#{first_name} #{last_name}"
+  end
+  def name=(new_name)
+    first, last = new_name.split(" ")
+    set(:first_name,first)
+    set(:last_name,last)
+  end
+end
+a = Thing.create("an_id")
+a.name = "Testy Testerton"
+b = Thing.create({:first_name => "Testy", :last_name => "Testerton"})
 ```
 
 ### Config
 You can configure the storage adapter by sending a packet of commands to `configure_store` like:
 
 ```ruby
-    RedisObject.configure_store({:db: 2})
+RedisObject.configure_store({:db: 2})
 ```
 
 The default storage adapter is `Redis`. The above config will connect to Redis on localhost on the default port (6379), but will `select` database number 2.
@@ -41,11 +41,11 @@ The default storage adapter is `Redis`. The above config will connect to Redis o
 Or, you can configure multiple stores to use within an app by passing a second parameter to name the store (default is 'general')
 
 ```ruby
-    RedisObject.configure_store({adapter: "Redis", :db: 4, :path: "/var/run/redis.sock"}, :message_queue)
-    
-    class Message < RedisObject
-      use_store :message_queue
-    end
+RedisObject.configure_store({adapter: "Redis", :db: 4, :path: "/var/run/redis.sock"}, :message_queue)
+
+class Message < RedisObject
+  use_store :message_queue
+end
 ```
 
 ## 'Collections'
@@ -56,30 +56,30 @@ Collections are automatically created, and can be access by their plural, lower-
 Example:
 
 ```ruby
-    class Person < RedisObject; end
-    class Address < RedisObject; end
-    john = Person.create("john")
-    john << Address.create({
-      :street => "123 Main St.",
-      :city => "San Francisco",
-      :state => "CA",
-      :zip => "12345"
-    })
+class Person < RedisObject; end
+class Address < RedisObject; end
+john = Person.create("john")
+john << Address.create({
+  :street => "123 Main St.",
+  :city => "San Francisco",
+  :state => "CA",
+  :zip => "12345"
+})
 
-    john.addresses
-    # ["Address:john"]
-    john.address 
-    # {
-    #   :address_id => "john",
-    #   :street => "123 Main St.",
-    #   :city => "San Francisco",
-    #   :state => "CA",
-    #   :zip => "12345",
-    #   :class=>"Address",
-    #   :key=>"Address:john",
-    #   :created_at=>Wed, 12 Dec 2012 16:49:26 -0800,
-    #   :updated_at=>Wed, 12 Dec 2012 16:49:26 -0800
-    # }
+john.addresses
+# ["Address:john"]
+john.address 
+# {
+#   :address_id => "john",
+#   :street => "123 Main St.",
+#   :city => "San Francisco",
+#   :state => "CA",
+#   :zip => "12345",
+#   :class=>"Address",
+#   :key=>"Address:john",
+#   :created_at=>Wed, 12 Dec 2012 16:49:26 -0800,
+#   :updated_at=>Wed, 12 Dec 2012 16:49:26 -0800
+# }
 ```
 
 You may also notice that the type of object, its basic storage key, and some timestamps are also automatically created and updated appropriately.
@@ -101,14 +101,14 @@ These types are also used for scoring when keeping field indices. If no type is 
 Setting the type of a field is super easy:
 
 ```ruby
-    class Person < RedisObject
-      bool :verified
-      json :meta
-    end
+class Person < RedisObject
+  bool :verified
+  json :meta
+end
 
-    john = Person.create("john")
-    john.meta = {:external_id => "123456", :number => 123}
-    john.verified # false
+john = Person.create("john")
+john.meta = {:external_id => "123456", :number => 123}
+john.verified # false
 ```
 
 TODO: Add verified? and verified! -style methods automagically for boolean fields.
@@ -118,31 +118,31 @@ You can also add your own custom types by defining filter methods for getting an
 Example:
 
 ```ruby
-    class Person < RedisObject
+class Person < RedisObject
 
-      def format_boolean(val)
-        val=="true"
-      end
+  def format_boolean(val)
+    val=="true"
+  end
 
-      def save_boolean(val)
-        val ? "true" : "false"
-      end
+  def save_boolean(val)
+    val ? "true" : "false"
+  end
 
-      def score_boolean(val)
-        val ? 1 : 0
-      end
+  def score_boolean(val)
+    val ? 1 : 0
+  end
 
-      class << self
-        def bool(k)
-          field_formats[k] = :format_boolean
-          save_formats[k] = :save_boolean
-          score_formats[k] = :score_boolean
-        end
-        alias_method :boolean, :bool
-
-      end
-
+  class << self
+    def bool(k)
+      field_formats[k] = :format_boolean
+      save_formats[k] = :save_boolean
+      score_formats[k] = :score_boolean
     end
+    alias_method :boolean, :bool
+
+  end
+
+end
 ```
 
 TODO: Make defining custom formats easier - no need to define class methods for this - could have helper function for it like `custom_format :bool, :get => :format_boolean` or similar.
