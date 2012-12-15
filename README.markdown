@@ -137,7 +137,7 @@ Any field that can be scored can store a sidecar index by that score. These indi
     Person.latest # always available if timestamps are on - most recently created object of type
     john.addresses.indexed(:created_at, 3, true) # john's 3 most recent addresses
     Person.indexed(:updated_at, -1, true) do |person|
-      # iterate through Person object in order of update times, most recent first
+      # iterate through Person objects in order of update times, most recent first
     end
 ```
 
