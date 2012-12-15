@@ -92,10 +92,56 @@ Setting the type of a field is super easy:
     john.verified # false
 ```
 
-TODO: Add verified? and verified! methods automagically for boolean fields.
+TODO: Add verified? and verified! -style methods automagically for boolean fields.
+
+You can also add your own custom types by defining filter methods for getting and setting a field, and can also define a scoring function if you would like to index fields of the type.
+
+Example:
+
+```ruby
+    class Person < RedisObject
+
+      def format_boolean(val)
+        val=="true"
+      end
+
+      def save_boolean(val)
+        val ? "true" : "false"
+      end
+
+      def score_boolean(val)
+        val ? 1 : 0
+      end
+
+      class << self
+        def bool(k)
+          field_formats[k] = :format_boolean
+          save_formats[k] = :save_boolean
+          score_formats[k] = :score_boolean
+        end
+        alias_method :boolean, :bool
+
+      end
+
+    end
+```
+
+TODO: Make defining custom formats easier - no need to define class methods for this - could have helper function for it like `custom_format :bool, :get => :format_boolean` or similar.
 
 ## Indices
+Any field that can be scored can store a sidecar index by that score. These indices can also be used to index items in a collection (internally, it is a simple Redis set intersection, so it is very fast). Timestamps are indexed by default for any object, so out of the box you can do:
 
+```ruby
+    Person.indexed(:created_at) # all Person objects, oldest first
+    Person.indexed(:created_at, 1, true) # only the newest Person (index_field, number of items, reverse sort?)
+    Person.latest # always available if timestamps are on - most recently created object of type
+    john.addresses.indexed(:created_at, 3, true) # john's 3 most recent addresses
+    Person.indexed(:updated_at, -1, true) do |person|
+      # iterate through Person object in order of update times, most recent first
+    end
+```
+
+Accessing indexed items always returns an Enumerator, so first/last/each/count/etc. are always usable and will access items only when iterated.
 
 ## Links
 Redis: [http://redis.io](http://redis.io)  
