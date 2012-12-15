@@ -46,16 +46,6 @@ Or, you can configure multiple stores to use within an app by passing a second p
     end
 ```
 
-The minimum config file looks something like this:
-
-```ruby
-    Bluepill.application("app_name") do |app|
-      app.process("process_name") do |process|
-        process.start_command = "/usr/bin/some_start_command"
-        process.pid_file = "/tmp/some_pid_file.pid"
-      end
-    end
-```
 
 ## Links
 Redis: [http://redis.io](http://redis.io)  
