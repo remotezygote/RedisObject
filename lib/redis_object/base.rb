@@ -2,20 +2,19 @@ module Seabright
 	module ObjectBase
 		
 		def initialize(ident={})
-			if ident && (ident.class == String || (ident.class == Symbol && (ident = ident.to_s)))
+			if ident && (ident.class == String || (ident.class == Symbol && (ident = ident.to_s)))# && ident.gsub!(/.*:/,'') && ident.length > 0
 				load(ident)
 			elsif ident && ident.class == Hash
 				ident[id_sym] ||= generate_id
 				if load(ident[id_sym])
-					ident.each do |k,v|
-						set(k,v)
-					end
+					mset(ident)
 				end
 			end
+			self
 		end
 		
-		def new_id
-			self.class.new_id
+		def new_id(complexity = 8)
+			self.class.new_id(complexity)
 		end
 		
 		def generate_id
@@ -34,7 +33,6 @@ module Seabright
 		end
 		
 		def to_json
-			require 'yajl'
 			Yajl::Encoder.encode(actual)
 		end
 		
@@ -58,7 +56,7 @@ module Seabright
 		
 		def save
 			set(:class, self.class.name)
-			set(id_sym,id)
+			set(id_sym,id.gsub(/.*:/,''))
 			set(:key, key)
 			store.sadd(self.class.cname.pluralize, key)
 			store.del(reserve_key)
@@ -66,16 +64,24 @@ module Seabright
 		
 		def delete!
 			store.del key
+			store.del hkey
+			store.del reserve_key
 			store.srem(self.class.plname, key)
-			store.smembers(ref_key).each do |k|
-				if self.class.find_by_key(k)
-					
-				end
-			end
+			# store.smembers(ref_key).each do |k|
+			# 	if self.class.find_by_key(k)
+			# 		
+			# 	end
+			# end
+			dereference_all!
+			nil
+		end
+		
+		def dereference_all!
+			
 		end
 		
 		def raw
-			store.hgetall(hkey).inject({}) {|acc,k| acc[k[0].to_sym] = enforce_format(k[0],k[1]); acc }
+			store.hgetall(hkey).inject({}) {|acc,(k,v)| acc[k.to_sym] = enforce_format(k,v); acc }
 		end
 		alias_method :inspect, :raw
 		alias_method :actual, :raw
@@ -89,11 +95,23 @@ module Seabright
 			store.hexists(hkey, k.to_s)
 		end
 		
+		def mset(dat)
+			# dat.each do |k,v|
+			# 	set(k,v)
+			# end
+			store.hmset(hkey, *(dat.inject([]){|acc,(k,v)| acc + [k,v] }))
+			dat
+		end
+		
 		def set(k,v)
 			store.hset(hkey, k.to_s.gsub(/\=$/,''), v)
 			v
 		end
 		alias_method :[]=, :set
+		
+		def unset(k)
+			store.hdel(hkey, k.to_s)
+		end
 		
 		def unset(*k)
 			store.hdel(hkey,*k)
@@ -112,8 +130,8 @@ module Seabright
 		
 		module ClassMethods
 			
-			def new_id
-				rand(36**8).to_s(36)
+			def new_id(complexity = 8)
+				rand(36**complexity).to_s(36)
 			end
 			
 			def cname
@@ -125,15 +143,16 @@ module Seabright
 			end
 			
 			def all
-				out = []
-				store.smembers(plname).each do |member|
-					if a = self.find(member)
-						out << a
-					else
-						# store.srem(plname,member)
+				Enumerator.new do |y|
+					store.smembers(plname).each do |member|
+						if a = RedisObject.find_by_key(hkey(member))
+							y << a
+						else
+							puts "[#{name}] Object listed but not found: #{member}" if DEBUG
+							# store.srem(plname,member)
+						end
 					end
 				end
-				out
 			end
 			
 			def first
@@ -145,9 +164,17 @@ module Seabright
 			end
 			
 			def each
-				store.smembers(plname).each do |member|
-					if a = grab(member)
-						yield a
+				all.each do |o|
+					yield o
+				end
+			end
+			
+			def match(pkt)
+				Enumerator.new do |y|
+					each do |i|
+						if pkt.map {|hk,va| i.get(hk)==va }.all?
+							y << i
+						end
 					end
 				end
 			end
@@ -156,13 +183,7 @@ module Seabright
 				if ident.class == String
 					return store.exists(self.hkey(ident)) ? self.new(ident) : nil
 				elsif ident.class == Hash
-					each do |obj|
-						good = true
-						ident.each do |k,v|
-							good = false if !obj[k.to_sym] || obj[k.to_sym]!=v
-						end
-						return obj if good
-					end
+					return match(ident)
 				end
 				nil
 			end
@@ -172,7 +193,7 @@ module Seabright
 				store.exists(self.hkey(k)) || store.exists(self.reserve_key(k))
 			end
 			
-			def create(ident)
+			def create(ident={})
 				obj = new(ident)
 				obj.save
 				obj
@@ -180,7 +201,7 @@ module Seabright
 			
 			def dump
 				out = []
-				self.all.each do |obj|
+				each do |obj|
 					out << obj.dump
 				end
 				out.join("\n")

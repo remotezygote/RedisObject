@@ -25,14 +25,38 @@ module Seabright
 			store.smembers(hkey_col).each do |name|
 				collections[name] = Seabright::Collection.load(name,self)
 			end
+			# TODO: Here's an example of dynamic method creation - should do this instead of method_missing + module intercepts...
+			# %w[report alert error summary].each do |kind|
+			# 	      class_eval <<-END
+			# 	        if "#{kind}" == "summary"
+			# 	          def summaries
+			# 	            data_for_server[:summaries]
+			# 	          end
+			# 	        else
+			# 	          def #{kind}s
+			# 	            data_for_server[:#{kind}s]
+			# 	          end
+			# 	        end
+			# 
+			# 	        if "#{kind}" == "report"
+			# 	          def report(new_entry)
+			# 	            reports << new_entry
+			# 	          end
+			# 	        elsif "#{kind}" == "summary"
+			# 	          def summary(new_entry)
+			# 	            summaries << new_entry
+			# 	          end
+			# 	        else
+			# 	          def #{kind}(*fields)
+			# 	            #{kind}s << ( fields.first.is_a?(Hash) ?
+			# 	                          fields.first :
+			# 	                          {:subject => fields.first, :body => fields.last} )
+			# 	          end
+			# 	        end
+			# 	        alias_method :add_#{kind}, :#{kind}
+			# 	      END
+			# 	    end
 			true
-		end
-		
-		def save
-			super
-			collections.each do |k,col|
-				col.save
-			end
 		end
 		
 		def delete_child(obj)
@@ -59,8 +83,34 @@ module Seabright
 		alias_method :<<, :reference
 		alias_method :push, :reference
 		
+		def remove_collection!(name)
+			store.srem hkey_col, name
+		end
+		
 		def referenced_by(obj)
 			store.sadd(ref_key,obj.hkey)
+		end
+
+		def backreferences(cls = nil)
+			out = store.smembers(ref_key).map do |backreference_hkey|
+				obj = RedisObject.find_by_key(backreference_hkey)
+				if cls && !obj.is_a?(cls)
+					nil
+				else
+					obj
+				end
+			end
+			out.compact
+		end
+
+		def dereference_from(obj)
+			obj.get_collection(collection_name).delete(hkey)
+		end
+
+		def dereference_from_backreferences
+			backreferences.each do |backreference|
+				dereference_from(backreference)
+			end
 		end
 		
 		def get(k)
@@ -86,6 +136,11 @@ module Seabright
 			@collections ||= {}
 		end
 		
+		def mset(dat)
+			dat.select! {|k,v| !collections[k.to_s] }
+			super(dat)
+		end
+		
 		def set(k,v)
 			@data ? super(k,v) : collections[k.to_s] ? get_collection(k.to_s).replace(v) : super(k,v)
 			v
@@ -105,7 +160,6 @@ module Seabright
 		
 	end
 	
-	
 	class Collection < Array
 		
 		def initialize(name,parent)
@@ -113,38 +167,47 @@ module Seabright
 			@parent = parent
 		end
 		
-		def indexed(idx,num=5,reverse=false,&block)
-			return indexed_yield(idx,num,reverse,&block) if block
-			out = []
-			indexed_yield(idx,num,reverse) do |member|
-				out << member
-			end
-			out
+		def remove!
+			@parent.remove_collection! @name
 		end
 		
-		def indexed_yield(idx,num=5,reverse=false,&block)
-			raise "No block specified" unless block
-			keys_by_index(idx,num,reverse) do |member|
-				if a = RedisObject.find_by_key(member)
-					yield a
+		def latest
+			indexed(:created_at,5,true).first
+		end
+		
+		def indexed(idx,num=-1,reverse=false)
+			keys = keys_by_index(idx,num,reverse)
+			out = Enumerator.new do |y|
+				keys.each do |member|
+					if a = RedisObject.find_by_key(member)
+						y << a
+					end
 				end
 			end
-			nil
+			if block_given?
+				out.each do |itm|
+					yield itm
+				end
+			else
+				out
+			end
 		end
 		
 		def temp_key
 			"zintersect_temp"
 		end
 		
-		def keys_by_index(idx,num=5,reverse=false,&block)
+		def keys_by_index(idx,num=-1,reverse=false)
 			keys = nil
 			store.multi do
 				store.zinterstore(temp_key, [index_key(idx), key], {:weights => ["1","0"]})
 				keys = store.send(reverse ? :zrevrange : :zrange, temp_key, 0, num)
 				store.del temp_key
 			end
-			keys.value.each do |member|
-				yield member
+			Enumerator.new do |y|
+				keys.value.each do |member|
+					y << member
+				end
 			end
 		end
 		
@@ -158,19 +221,23 @@ module Seabright
 		
 		def find(k)
 			if k.is_a? String
-				return real_at item_key(k)
+				return real_at(item_key(k))
 			elsif k.is_a? Hash
-				each do |i|
-					return i if k.map {|hk,va| i.get(hk)==va }.all?
-				end
+				return match(k)
+			elsif k.is_a? Number
+				return real_at(at(k))
 			end
 			return nil
 		end
 		alias_method :[], :find
 		
 		def match(pkt)
-			each do |i|
-				yield i if pkt.map {|hk,va| i.get(hk)==va }.all?
+			Enumerator.new do |y|
+				each do |i|
+					if pkt.map {|hk,va| i.get(hk)==va }.all?
+						y << i
+					end
+				end
 			end
 		end
 		
@@ -183,12 +250,7 @@ module Seabright
 		# end
 		
 		def objects
-			out = []
-			each_index do |key|
-				a = RedisObject.find_by_key(at(key))
-				out.push a if a
-			end
-			out
+			each.to_a
 		end
 		
 		def first
@@ -200,38 +262,66 @@ module Seabright
 		end
 		
 		def each
-			each_index do |key|
-				a = RedisObject.find_by_key(at(key))
-				yield a if a
+			out = Enumerator.new do |y|
+				each_index do |key|
+					if a = RedisObject.find_by_key(at(key))
+						y << a
+					end
+				end
+			end
+			if block_given?
+				out.each do |a|
+					yield a
+				end
+			else
+				out
 			end
 		end
-
+		
+		def cleanup!
+			each_index do |key|
+				unless a = RedisObject.find_by_key(at(key))
+					puts "Deleting #{key} because not #{a.inspect}" if DEBUG
+					delete at(key)
+				end
+			end
+			if size < 1
+				puts "Deleting collection #{@name} because empty" if DEBUG
+				remove!
+			end
+		end
+		
 		def map(&block)
-			objects.map(&block)
+			each.map(&block)
 		end
 		
 		def select(&block)
-			out = []
-			each_index do |key|
-				a = RedisObject.find_by_key(at(key))
-				out.push(a) if block.call(a)
+			return nil unless block_given?
+			Enumerator.new do |y|
+				each_index do |key|
+					if (a = RedisObject.find_by_key(at(key))) && block.call(a)
+						y << a
+					end
+				end
 			end
-			out
 		end
 		
 		def delete(obj)
-			store.zrem(key,obj)
-			super(obj)
+			k = obj.class == String ? obj : obj.hkey
+			store.zrem(key,k)
+			super(k)
+		end
+		
+		def clear!
+			store.zrem(key,self.join(" "))
 		end
 		
 		def <<(obj)
-			store.zadd(key,store.zcount(key,"-inf", "+inf"),obj)
-			super(obj)
+			k = obj.class == String ? obj : obj.hkey
+			store.zadd(key,store.zcount(key,"-inf", "+inf"),k)
+			super(k)
 		end
 		alias_method :push, :<<
-		
-		def save
-		end
 		
 		def class_const
 			Object.const_get(@name.to_s.classify.to_sym)

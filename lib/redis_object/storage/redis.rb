@@ -13,11 +13,9 @@ module Seabright
 				end
 			end
 			
-			private
-			
 			def new_connection
 				require 'redis'
-				puts "Connecting to Redis with: #{config_opts(:path, :db, :password).inspect}" if DEBUG
+				# puts "Connecting to Redis with: #{config_opts(:path, :db, :password).inspect}" if DEBUG
 				::Redis.new(config_opts(:path, :db, :password))
 			end
 			

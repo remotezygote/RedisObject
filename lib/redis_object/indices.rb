@@ -21,6 +21,13 @@ module Seabright
 		# 	save_indices
 		# end
 		
+		def mset(dat)
+			super(dat)
+			dat.select {|k,v| self.class.has_sort_index?(k) }.each do |k,v|
+				store.zadd(index_key(k), score_format(k,v), hkey)
+			end
+		end
+		
 		def set(k,v)
 			super(k,v)
 			if self.class.has_sort_index?(k)
@@ -30,23 +37,21 @@ module Seabright
 		
 		module ClassMethods
 			
-			def indexed(idx,num=5,reverse=false,&block)
-				return indexed_yield(idx,num,reverse,&block) if block
-				out = []
-				indexed_yield(idx,num,reverse) do |member|
-					out << member
-				end
-				out
-			end
-			
-			def indexed_yield(idx,num=5,reverse=false,&block)
-				raise "No block specified" unless block
-				store.send(reverse ? :zrevrange : :zrange, index_key(idx), 0, num).each do |member|
-					if a = self.find_by_key(member)
-						yield a
+			def indexed(idx,num=-1,reverse=false)
+				out = Enumerator.new do |yielder|
+					store.send(reverse ? :zrevrange : :zrange, index_key(idx), 0, num).each do |member|
+						if a = self.find_by_key(member)
+							yielder << a
+						end
 					end
 				end
-				nil
+				if block_given?
+					out.each do |itm|
+						yield itm
+					end
+				else
+					out
+				end
 			end
 			
 			def index_key(idx)
@@ -71,6 +76,10 @@ module Seabright
 			
 			def has_sort_index?(k)
 				sort_indices.include?(k.to_sym)
+			end
+			
+			def latest
+				indexed(:created_at,999,true).first
 			end
 			
 		end

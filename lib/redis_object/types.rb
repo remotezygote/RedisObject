@@ -41,13 +41,16 @@ module Seabright
 			Float(val)
 		end
 		
+		def format_float(val)
+			Float(val)
+		end
+		alias_method :score_float, :format_float
+		
 		def format_json(val)
-			require 'yajl'
 			Yajl::Parser.new(:symbolize_keys => true).parse(val)
 		end
 		
 		def save_json(val)
-			require 'yajl'
 			Yajl::Encoder.encode(val)
 		end
 		
@@ -61,6 +64,11 @@ module Seabright
 		
 		def get(k)
 			enforce_format(k,super(k))
+		end
+		
+		def mset(dat)
+			dat.merge!(dat) {|k,v1,v2| save_format(k,v1) }
+			super(dat)
 		end
 		
 		def set(k,v)
@@ -77,6 +85,12 @@ module Seabright
 			def number(k)
 				field_formats[k] = :format_number
 				score_formats[k] = :score_number
+			end
+			alias_method :int, :number
+			
+			def float(k)
+				field_formats[k] = :format_float
+				score_formats[k] = :score_float
 			end
 			
 			def bool(k)

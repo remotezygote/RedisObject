@@ -28,10 +28,14 @@ module Seabright
 				@store_name = id.to_sym
 			end
 			
-			private
+			def reconnect!
+				adapters.each do |k,v|
+					v.reconnect!
+				end
+			end
 			
 			def adapters
-				$adapters ||= {}
+				@@adapters ||= {}
 			end
 			
 			def adapter
@@ -43,7 +47,7 @@ module Seabright
 			end
 			
 			def configs
-				$conf ||= {}
+				@@conf ||= {}
 			end
 			
 			def config(id=store_name)

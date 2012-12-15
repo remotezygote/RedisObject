@@ -7,6 +7,11 @@ module Seabright
 			set(:updated_at, Time.now)
 		end
 		
+		def mset(dat)
+			super(dat)
+			set(:updated_at, Time.now)
+		end
+		
 		def set(k,v)
 			super(k,v)
 			set(:updated_at, Time.now) unless k.to_sym == :updated_at

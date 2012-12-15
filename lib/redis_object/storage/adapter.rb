@@ -15,8 +15,6 @@ module Seabright
 				@config ||= {}
 			end
 			
-			private
-			
 			def config_opts(*opts)
 				opts.inject({}) do |a,k|
 					a[k] = config[k]
@@ -25,14 +23,15 @@ module Seabright
 			end
 			
 			def reset
-				@@connections.each_index do |i|
-					@@connections[i] = nil
+				@connections.each_index do |i|
+					@connections[i] = nil
 				end
 			end
+			alias_method :reconnect!, :reset
 			
 			def connection(num=0)
-				@@connections ||= []
-				@@connections[num] ||= new_connection
+				@connections ||= []
+				@connections[num] ||= new_connection
 			end
 			
 			def new_connection
