@@ -33,13 +33,13 @@ It&apos;s hosted on [rubygems.org][rubygems].
 You can configure the storage adapter by sending a packet of commands to `configure_store` like:
 
 ```ruby
-    RedisObject.configure_store({})
+    RedisObject.configure_store({adapter: "Redis", :db: 2})
 ```
 
 Or, you can configure multiple stores to use within an app by passing a second parameter to name the store (default is 'general')
 
 ```ruby
-    RedisObject.configure_store({}, :message_queue)
+    RedisObject.configure_store({adapter: "Redis", :db: 4, :path: "/var/run/redis.sock"}, :message_queue)
     
     class Message < RedisObject
       use_store :message_queue
