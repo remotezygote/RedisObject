@@ -6,9 +6,12 @@ You'll need [Redis](http://redis.io). Other storage adapters are in the works.
 
 
 ## Installation
-It&apos;s hosted on [rubygems.org][https://rubygems.org/gems/redis_object].
 
 	sudo gem install redis_object
+
+Or, you can add it to your Gemfile:
+
+	gem 'redis_object'
 
 
 ## Usage
