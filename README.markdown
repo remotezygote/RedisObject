@@ -2,11 +2,11 @@
 RedisObject is a fast and simple-to-use object persistence layer for Ruby.
 
 ## Prerequisites
-You'll need [Redis](http://redis.io).
+You'll need [Redis](http://redis.io). Other storage adapters are in the works.
 
 
 ## Installation
-It&apos;s hosted on [rubygems.org][rubygems].
+It&apos;s hosted on [rubygems.org][https://rubygems.org/gems/redis_object].
 
 	sudo gem install redis_object
 
