@@ -68,8 +68,8 @@ Example:
     # ["Address:john"]
     john.address 
     # {
-	  #   :address_id => "john",
-	  #   :street => "123 Main St.",
+    #   :address_id => "john",
+    #   :street => "123 Main St.",
     #   :city => "San Francisco",
     #   :state => "CA",
     #   :zip => "12345",
