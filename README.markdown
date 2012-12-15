@@ -33,8 +33,10 @@ It&apos;s hosted on [rubygems.org][rubygems].
 You can configure the storage adapter by sending a packet of commands to `configure_store` like:
 
 ```ruby
-    RedisObject.configure_store({adapter: "Redis", :db: 2})
+    RedisObject.configure_store({:db: 2})
 ```
+
+The default storage adapter is `Redis`. The above config will connect to Redis on localhost on the default port (6379), but will `select` database number 2.
 
 Or, you can configure multiple stores to use within an app by passing a second parameter to name the store (default is 'general')
 
