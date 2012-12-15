@@ -57,10 +57,27 @@ Example:
     class Person < RedisObject; end
     class Address < RedisObject; end
     john = Person.create("john")
-    john << Address.create({:street => "123 Main St.", :city => "San Francisco", :state => "CA", :zip => "12345"})
+    john << Address.create({
+      :street => "123 Main St.",
+      :city => "San Francisco",
+      :state => "CA",
+      :zip => "12345"
+    })
 
-    john.addresses # ["Address:john"]
-    john.address # {:address_id => "john", :street => "123 Main St.", :city => "San Francisco", :state => "CA", :zip => "12345", :class=>"Address", :key=>"Address:john", :created_at=>Wed, 12 Dec 2012 16:49:26 -0800, :updated_at=>Wed, 12 Dec 2012 16:49:26 -0800}
+    john.addresses
+    # ["Address:john"]
+    john.address 
+    # {
+	  #   :address_id => "john",
+	  #   :street => "123 Main St.",
+    #   :city => "San Francisco",
+    #   :state => "CA",
+    #   :zip => "12345",
+    #   :class=>"Address",
+    #   :key=>"Address:john",
+    #   :created_at=>Wed, 12 Dec 2012 16:49:26 -0800,
+    #   :updated_at=>Wed, 12 Dec 2012 16:49:26 -0800
+    # }
 ```
 
 You may also notice that the type of object, its basic storage key, and some timestamps are also automatically created and updated appropriately.
