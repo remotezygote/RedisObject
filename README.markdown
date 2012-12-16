@@ -54,7 +54,7 @@ end
 ## 'Collections'
 Object relationships are stored in collections of objects attached to other objects. To 'collect' an object onto another, you simply call `reference` to reference the objects (also aliased to the concat operator `<<`).
 
-Collections are automatically created, and can be access by their plural, lower-case name to gather all of the items in a collection (returns and Enumerable `Collection` object), or by its singular lower-case name to just get one somewhat randomly (useful for 1 -> 1 style relationships).
+Collections are automatically created, and can be access by their plural, lower-case name to gather all of the items in a collection (returns an Enumerable `Collection` object), or by its singular lower-case name to just get one somewhat randomly (useful for 1 -> 1 style relationships).
 
 Example:
 
