@@ -85,7 +85,7 @@ john.address
 # }
 ```
 
-You may also notice that the type of object, its basic storage key, and some timestamps are also automatically created and updated appropriately.
+You may notice that the type of object, its basic storage key, and some timestamps are automatically created and updated appropriately.
 
 It is important to note that collections inherit any indices of its underlying object type. See Indices below for examples.
 
@@ -116,7 +116,7 @@ john.verified # false
 
 TODO: Add verified? and verified! -style methods automagically for boolean fields.
 
-You can also add your own custom types by defining filter methods for getting and setting a field, and can also define a scoring function if you would like to index fields of the type.
+You can add your own custom types by defining filter methods for getting and setting a field, and can define a scoring function if you would like to index fields of your type.
 
 Example:
 
@@ -151,7 +151,7 @@ end
 TODO: Make defining custom formats easier - no need to define class methods for this - could have helper function for it like `custom_format :bool, :get => :format_boolean` or similar.
 
 ## Indices
-Any field that can be scored can store a sidecar index by that score. These indices can also be used to index items in a collection (internally, it is a simple Redis set intersection, so it is very fast). Timestamps are indexed by default for any object, so out of the box you can do:
+Any field that can be scored can store a sidecar index by that score. These indices can be used to index items in a collection (internally, it is a simple Redis set intersection, so it is very fast). Timestamps are indexed by default for any object, so out of the box you can do:
 
 ```ruby
 Person.indexed(:created_at) # all Person objects, oldest first
@@ -163,7 +163,7 @@ Person.indexed(:updated_at, -1, true) do |person|
 end
 ```
 
-Accessing indexed items always returns an Enumerator, so first/last/each/count/etc. are always usable and will access items only when iterated.
+Accessing indexed items always returns an Enumerator, so first/last/each/count/etc. are usable anywhere and will access objects only when iterated.
 
 ## Links
 Redis: [http://redis.io](http://redis.io)  
