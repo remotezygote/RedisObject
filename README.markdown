@@ -92,12 +92,12 @@ It is important to note that collections inherit any indices of its underlying o
 ## Types
 A few types of data can be specified for certain fields. The types supported are:
 
-Date
-Number
-Float
-Bool
-Array
-JSON (store any data that can be JSON-encoded - it will be automatically encoded/decoded when stored/accessed)
+* Date
+* Number
+* Float
+* Bool
+* Array
+* JSON (store any data that can be JSON-encoded - it will be automatically encoded/decoded when stored/accessed)
 
 These types are also used for scoring when keeping field indices. If no type is specified, String is used, and no scoring is possible at this time.
 
