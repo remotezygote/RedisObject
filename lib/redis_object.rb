@@ -5,6 +5,7 @@ require 'yajl'
 require "redis_object/storage"
 
 require "redis_object/base"
+require "redis_object/inheritance_tracking"
 require "redis_object/storage"
 require "redis_object/keys"
 require "redis_object/types"
@@ -20,6 +21,7 @@ module Seabright
 	class RedisObject
 		
 		include Seabright::ObjectBase
+		include Seabright::InheritanceTracking
 		include Seabright::Storage
 		include Seabright::Keys
 		include Seabright::Types

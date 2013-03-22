@@ -21,6 +21,7 @@ module Seabright
 			
 			def configure_store(conf,id=store_name)
 				configs[id] = conf
+				store(id)
 			end
 			
 			def use_store(id)
@@ -52,6 +53,31 @@ module Seabright
 			
 			def config(id=store_name)
 				configs[id]
+			end
+			
+			def dump_stores_to_files(path)
+				raise "Directory does not exist!" unless Dir.exists?(File.dirname(path))
+				adapters.each do |name,adptr|
+					if adptr.respond_to? :dump_to_file
+						puts "Dumping #{name} into #{path}/#{name.to_s}.dump"
+						adptr.dump_to_file("#{path}/#{name.to_s}.dump")
+					end
+				end
+			end
+			
+			def restore_stores_from_files(path)
+				raise "Directory does not exist!" unless Dir.exists?(File.dirname(path))
+				Dir.glob(path + "/*.dump").each do |file|
+					name = file.gsub(/\.[^\.]+$/,'').gsub(/.*\//,'').to_sym
+					if (stor = store(name)) && stor.respond_to?(:restore_from_file)
+						puts "Restoring #{name} from #{file}"
+						# if stor.respond_to?(:flushdb)
+						# 	stor.flushdb
+						# 	sleep 2
+						# end
+						stor.restore_from_file("#{path}/#{file}")
+					end
+				end
 			end
 			
 		end

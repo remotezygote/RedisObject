@@ -180,9 +180,10 @@ module Seabright
 			end
 			
 			def grab(ident)
-				if ident.class == String
-					return store.exists(self.hkey(ident)) ? self.new(ident) : nil
-				elsif ident.class == Hash
+				case ident
+				when String, Symbol
+					return store.exists(self.hkey(ident.to_s)) ? self.new(ident.to_s) : nil
+				when Hash
 					return match(ident)
 				end
 				nil

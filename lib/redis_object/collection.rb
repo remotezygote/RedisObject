@@ -76,8 +76,7 @@ module Seabright
 		def reference(obj)
 			name = obj.collection_name
 			store.sadd hkey_col, name
-			collections[name.to_s] ||= Seabright::Collection.load(name,self)
-			collections[name.to_s] << obj.hkey
+			get_collection(name) << obj.hkey
 			obj.referenced_by self
 		end
 		alias_method :<<, :reference
@@ -148,8 +147,83 @@ module Seabright
 		
 		module ClassMethods
 			
-			def hkey_col(ident = id)
+			def hkey_col(ident = nil)
 				"#{hkey(ident)}:collections"
+			end
+			
+			def delete_child(obj)
+				if col = collections[obj.collection_name]
+					col.delete obj.hkey
+				end
+			end
+			
+			def collection_name
+				plname.underscore.to_sym
+			end
+			
+			def ref_key(ident = nil)
+				"#{hkey(ident)}:backreferences"
+			end
+			
+			def reference(obj)
+				name = obj.collection_name
+				store.sadd hkey_col, name
+				get_collection(name) << obj.hkey
+			end
+			alias_method :<<, :reference
+			alias_method :push, :reference
+			
+			def remove_collection!(name)
+				store.srem hkey_col, name
+			end
+			
+			def referenced_by(obj)
+				store.sadd(ref_key,obj.hkey)
+			end
+			
+			def backreferences(cls = nil)
+				out = store.smembers(ref_key).map do |backreference_hkey|
+					obj = RedisObject.find_by_key(backreference_hkey)
+					if cls && !obj.is_a?(cls)
+						nil
+					else
+						obj
+					end
+				end
+				out.compact
+			end
+			
+			def dereference_from(obj)
+				obj.get_collection(collection_name).delete(hkey)
+			end
+			
+			def dereference_from_backreferences
+				backreferences.each do |backreference|
+					dereference_from(backreference)
+				end
+			end
+			
+			def get(k)
+				if has_collection?(k)
+					get_collection(k)
+				elsif has_collection?(pk = k.to_s.pluralize)
+					get_collection(pk).first
+				else
+					super(k)
+				end
+			end
+			
+			def has_collection?(name)
+				store.sismember(hkey_col,name.to_s)
+			end
+			
+			def get_collection(name)
+				collections[name.to_s] ||= Collection.load(name,self)
+				collections[name.to_s]
+			end
+			
+			def collections
+				@collections ||= {}
 			end
 			
 		end

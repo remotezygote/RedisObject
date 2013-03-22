@@ -22,7 +22,12 @@ module Seabright
 		end
 		
 		def format_date(val)
-			val.instance_of?(DateTime) ? val : DateTime.parse(val)
+			begin
+				val.instance_of?(DateTime) ? val : ( val.instance_of?(String) ? DateTime.parse(val) : nil )
+			rescue Exception => e
+				puts "Could not parse value as date using Date.parse. Returning nil instead. Value: #{val.inspect}" if DEBUG
+				nil
+			end
 		end
 		
 		def score_date(val)
@@ -30,7 +35,7 @@ module Seabright
 		end
 		
 		def format_array(val)
-			eval val
+			Yajl::Parser.new(:symbolize_keys => true).parse(val)
 		end
 		
 		def format_number(val)
@@ -54,6 +59,10 @@ module Seabright
 			Yajl::Encoder.encode(val)
 		end
 		
+		def save_array(val)
+			Yajl::Encoder.encode(val)
+		end
+
 		def format_boolean(val)
 			val=="true"
 		end
@@ -78,46 +87,116 @@ module Seabright
 		module ClassMethods
 			
 			def date(k)
-				field_formats[k] = :format_date
-				score_formats[k] = :score_date
+				set_field_format(k, :format_date)
+				set_score_format(k, :score_date)
 			end
 			
 			def number(k)
-				field_formats[k] = :format_number
-				score_formats[k] = :score_number
+				set_field_format(k, :format_number)
+				set_score_format(k, :score_number)
 			end
 			alias_method :int, :number
 			
 			def float(k)
-				field_formats[k] = :format_float
-				score_formats[k] = :score_float
+				set_field_format(k, :format_float)
+				set_score_format(k, :score_float)
 			end
 			
 			def bool(k)
-				field_formats[k] = :format_boolean
-				score_formats[k] = :score_boolean
+				set_field_format(k, :format_boolean)
+				set_score_format(k, :score_boolean)
 			end
 			alias_method :boolean, :bool
 			
 			def array(k)
-				field_formats[k] = :format_array
+				set_field_format(k, :format_array)
+				set_save_format(k, :save_array)
 			end
 			
 			def json(k)
-				field_formats[k] = :format_json
-				save_formats[k] = :save_json
+				set_field_format(k, :format_json)
+				set_save_format(k, :save_json)
 			end
 			
 			def field_formats
-				@@field_formats ||= {}
+				@field_formats_hash ||= (defined?(superclass.field_formats) ? superclass.field_formats.clone : {})
 			end
 			
 			def score_formats
-				@@score_formats ||= {}
+				@score_formats_hash ||= (defined?(superclass.score_formats) ? superclass.score_formats.clone : {})
 			end
 			
 			def save_formats
-				@@save_formats ||= {}
+				@save_formats_hash ||= (defined?(superclass.save_formats) ? superclass.save_formats.clone : {})
+			end
+
+			def set_field_format(k, v)
+				field_formats_set_locally.add(k)
+				field_formats[k] = v
+				update_child_class_field_formats(k, v)
+			end
+
+			def field_formats_set_locally
+				@field_formats_set_locally_set ||= Set.new
+			end
+
+			def inherit_field_format(k, v)
+				unless fields_formats_set_locally.include? k
+					field_formats[k] = v
+					update_child_class_field_formats(k, v)
+				end
+			end
+
+			def update_child_class_field_formats(k, v)
+				child_classes.each do |child_class|
+					child_class.inherit_field_format(k, v)
+				end
+			end
+
+			def set_score_format(k, v)
+				score_formats_set_locally.add(k)
+				score_formats[k] = v
+				update_child_class_score_formats(k, v)
+			end
+
+			def score_formats_set_locally
+				@score_formats_set_locally_set ||= Set.new
+			end
+
+			def inherit_score_format(k, v)
+				unless scores_formats_set_locally.include? k
+					score_formats[k] = v
+					update_child_class_score_formats(k, v)
+				end
+			end
+
+			def update_child_class_score_formats(k, v)
+				child_classes.each do |child_class|
+					child_class.inherit_score_format(k, v)
+				end
+			end
+
+			def set_save_format(k, v)
+				save_formats_set_locally.add(k)
+				save_formats[k] = v
+				update_child_class_save_formats(k, v)
+			end
+
+			def save_formats_set_locally
+				@save_formats_set_locally_set ||= Set.new
+			end
+
+			def inherit_save_format(k, v)
+				unless save_formats_set_locally.include? k
+					save_formats[k] = v
+					update_child_class_save_formats(k, v)
+				end
+			end
+
+			def update_child_class_save_formats(k, v)
+				child_classes.each do |child_class|
+					child_class.inherit_save_format(k, v)
+				end
 			end
 			
 			def register_format(k,fmt)
