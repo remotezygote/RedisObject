@@ -41,7 +41,7 @@ module Seabright
 		end
 		
 		def collection_name
-			self.class.plname.underscore.to_sym
+			self.class.collection_name
 		end
 		
 		def ref_key(ident = nil)
@@ -49,6 +49,7 @@ module Seabright
 		end
 		
 		def reference(obj)
+			raise "Not an object." unless obj.is_a?(RedisObject)
 			get_collection(obj.collection_name) << obj.hkey
 			obj.referenced_by self
 		end
@@ -112,7 +113,7 @@ module Seabright
 				store.sadd hkey_col, name
 				@collection_names << name
 				collections[name.to_s] ||= Collection.load(name,self)
-				define_access(name) do
+				define_access(name.to_s.pluralize) do
 					get_collection(name)
 				end
 				define_access(name.to_s.singularize) do
@@ -153,7 +154,7 @@ module Seabright
 			end
 			
 			def collection_name
-				plname.underscore.to_sym
+				self.name.split('::').last.pluralize.underscore.to_sym
 			end
 			
 			def ref_key(ident = nil)

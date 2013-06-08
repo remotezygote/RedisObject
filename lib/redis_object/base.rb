@@ -54,7 +54,7 @@ module Seabright
 			set(:class, self.class.name)
 			set(id_sym,id.gsub(/.*:/,''))
 			set(:key, key)
-			store.sadd(self.class.cname.pluralize, key)
+			store.sadd(self.class.plname, key)
 			store.del(reserve_key)
 		end
 		
@@ -163,8 +163,8 @@ module Seabright
 			end
 		end
 		
-		def id_sym(cls=nil)
-			"#{(cls || self.class.cname).split('::').last.downcase}_id".to_sym
+		def id_sym(cls=self.class.cname)
+			"#{cls.split('::').last.downcase}_id".to_sym
 		end
 		
 		def load_all_hash_values
@@ -221,11 +221,11 @@ module Seabright
 			end
 			
 			def cname
-				@cname = self.name.split('::').last
+				self.name
 			end
 			
 			def plname
-				@plname ||= cname.pluralize
+				cname.pluralize
 			end
 			
 			def all
@@ -379,8 +379,7 @@ module Seabright
 			
 			def find_by_key(k)
 				if store.exists(k) && (cls = store.hget(k,:class))
-					o_id = store.hget(k,id_sym(cls))
-					return deep_const_get(cls.to_sym).new(o_id)
+					return deep_const_get(cls.to_sym).new(store.hget(k,id_sym(cls)))
 				end
 				nil
 			end
@@ -406,8 +405,8 @@ module Seabright
 				true
 			end
 			
-			def id_sym(cls=nil)
-				"#{(cls || cname).split('::').last.downcase}_id".to_sym
+			def id_sym(cls=cname)
+				"#{cls.split('::').last.downcase}_id".to_sym
 			end
 			
 			def describe
