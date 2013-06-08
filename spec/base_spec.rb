@@ -1,7 +1,5 @@
 require File.dirname(__FILE__) + '/spec_helper'
 
-DEBUG = false
-
 module ObjectTests
 	class User < RedisObject
 		

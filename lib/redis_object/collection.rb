@@ -24,38 +24,13 @@ module Seabright
 			super(o_id)
 			store.smembers(hkey_col).each do |name|
 				collections[name] = Seabright::Collection.load(name,self)
+				define_access(name) do
+					get_collection(name)
+				end
+				define_access(name.to_s.singularize) do
+					get_collection(name).latest
+				end
 			end
-			# TODO: Here's an example of dynamic method creation - should do this instead of method_missing + module intercepts...
-			# %w[report alert error summary].each do |kind|
-			# 	      class_eval <<-END
-			# 	        if "#{kind}" == "summary"
-			# 	          def summaries
-			# 	            data_for_server[:summaries]
-			# 	          end
-			# 	        else
-			# 	          def #{kind}s
-			# 	            data_for_server[:#{kind}s]
-			# 	          end
-			# 	        end
-			# 
-			# 	        if "#{kind}" == "report"
-			# 	          def report(new_entry)
-			# 	            reports << new_entry
-			# 	          end
-			# 	        elsif "#{kind}" == "summary"
-			# 	          def summary(new_entry)
-			# 	            summaries << new_entry
-			# 	          end
-			# 	        else
-			# 	          def #{kind}(*fields)
-			# 	            #{kind}s << ( fields.first.is_a?(Hash) ?
-			# 	                          fields.first :
-			# 	                          {:subject => fields.first, :body => fields.last} )
-			# 	          end
-			# 	        end
-			# 	        alias_method :add_#{kind}, :#{kind}
-			# 	      END
-			# 	    end
 			true
 		end
 		
@@ -74,14 +49,17 @@ module Seabright
 		end
 		
 		def reference(obj)
-			name = obj.collection_name
-			store.sadd hkey_col, name
-			collections[name.to_s] ||= Seabright::Collection.load(name,self)
-			collections[name.to_s] << obj.hkey
+			get_collection(obj.collection_name) << obj.hkey
 			obj.referenced_by self
 		end
-		alias_method :<<, :reference
-		alias_method :push, :reference
+		
+		def <<(obj)
+			reference obj
+		end
+		
+		def push(obj)
+			reference obj
+		end
 		
 		def remove_collection!(name)
 			store.srem hkey_col, name
@@ -124,16 +102,32 @@ module Seabright
 		end
 		
 		def has_collection?(name)
-			store.sismember(hkey_col,name.to_s)
+			collection_names.include?(name.to_s)
 		end
 		
 		def get_collection(name)
-			collections[name.to_s] ||= Collection.load(name,self)
+			if has_collection?(name)
+				collections[name.to_s] ||= Collection.load(name,self)
+			else
+				store.sadd hkey_col, name
+				@collection_names << name
+				collections[name.to_s] ||= Collection.load(name,self)
+				define_access(name) do
+					get_collection(name)
+				end
+				define_access(name.to_s.singularize) do
+					get_collection(name).latest
+				end
+			end
 			collections[name.to_s]
 		end
 		
 		def collections
 			@collections ||= {}
+		end
+		
+		def collection_names
+			@collection_names ||= store.smembers(hkey_col)
 		end
 		
 		def mset(dat)
@@ -142,14 +136,95 @@ module Seabright
 		end
 		
 		def set(k,v)
-			@data ? super(k,v) : collections[k.to_s] ? get_collection(k.to_s).replace(v) : super(k,v)
+			@data ? super(k,v) : has_collection?(k) ? get_collection(k.to_s).replace(v) : super(k,v)
 			v
 		end
 		
 		module ClassMethods
 			
-			def hkey_col(ident = id)
+			def hkey_col(ident = nil)
 				"#{hkey(ident)}:collections"
+			end
+			
+			def delete_child(obj)
+				if col = collections[obj.collection_name]
+					col.delete obj.hkey
+				end
+			end
+			
+			def collection_name
+				plname.underscore.to_sym
+			end
+			
+			def ref_key(ident = nil)
+				"#{hkey(ident)}:backreferences"
+			end
+			
+			def reference(obj)
+				name = obj.collection_name
+				store.sadd hkey_col, name
+				get_collection(name) << obj.hkey
+			end
+			
+			def <<(obj)
+				reference obj
+			end
+
+			def push(obj)
+				reference obj
+			end
+			
+			def remove_collection!(name)
+				store.srem hkey_col, name
+			end
+			
+			def referenced_by(obj)
+				store.sadd(ref_key,obj.hkey)
+			end
+			
+			def backreferences(cls = nil)
+				out = store.smembers(ref_key).map do |backreference_hkey|
+					obj = RedisObject.find_by_key(backreference_hkey)
+					if cls && !obj.is_a?(cls)
+						nil
+					else
+						obj
+					end
+				end
+				out.compact
+			end
+			
+			def dereference_from(obj)
+				obj.get_collection(collection_name).delete(hkey)
+			end
+			
+			def dereference_from_backreferences
+				backreferences.each do |backreference|
+					dereference_from(backreference)
+				end
+			end
+			
+			def get(k)
+				if has_collection?(k)
+					get_collection(k)
+				elsif has_collection?(pk = k.to_s.pluralize)
+					get_collection(pk).first
+				else
+					super(k)
+				end
+			end
+			
+			def has_collection?(name)
+				store.sismember(hkey_col,name.to_s)
+			end
+			
+			def get_collection(name)
+				collections[name.to_s] ||= Collection.load(name,self)
+				collections[name.to_s]
+			end
+			
+			def collections
+				@collections ||= {}
 			end
 			
 		end
@@ -162,13 +237,15 @@ module Seabright
 	
 	class Collection < Array
 		
-		def initialize(name,parent)
+		include Seabright::CachedScripts
+		
+		def initialize(name,owner)
 			@name = name.to_s
-			@parent = parent
+			@owner = owner
 		end
 		
 		def remove!
-			@parent.remove_collection! @name
+			@owner.remove_collection! @name
 		end
 		
 		def latest
@@ -179,7 +256,7 @@ module Seabright
 			keys = keys_by_index(idx,num,reverse)
 			out = Enumerator.new do |y|
 				keys.each do |member|
-					if a = RedisObject.find_by_key(member)
+					if a = class_const.find_by_key(member)
 						y << a
 					end
 				end
@@ -194,18 +271,16 @@ module Seabright
 		end
 		
 		def temp_key
-			"zintersect_temp"
+			"#{key}::zintersect_temp::#{RedisObject.new_id(4)}"
 		end
 		
+		RedisObject::ScriptSources::FwdScript = "redis.call('ZINTERSTORE', KEYS[1], 2, KEYS[2], KEYS[3], 'WEIGHTS', 1, 0)\nlocal keys = redis.call('ZRANGE', KEYS[1], 0, KEYS[4])\nredis.call('DEL', KEYS[1])\nreturn keys".freeze
+		RedisObject::ScriptSources::RevScript = "redis.call('ZINTERSTORE', KEYS[1], 2, KEYS[2], KEYS[3], 'WEIGHTS', 1, 0)\nlocal keys = redis.call('ZREVRANGE', KEYS[1], 0, KEYS[4])\nredis.call('DEL', KEYS[1])\nreturn keys".freeze
+		
 		def keys_by_index(idx,num=-1,reverse=false)
-			keys = nil
-			store.multi do
-				store.zinterstore(temp_key, [index_key(idx), key], {:weights => ["1","0"]})
-				keys = store.send(reverse ? :zrevrange : :zrange, temp_key, 0, num)
-				store.del temp_key
-			end
+			keys = run_script(reverse ? :RevScript : :FwdScript, [temp_key, index_key(idx), key, num])
 			Enumerator.new do |y|
-				keys.value.each do |member|
+				keys.each do |member|
 					y << member
 				end
 			end
@@ -224,12 +299,15 @@ module Seabright
 				return real_at(item_key(k))
 			elsif k.is_a? Hash
 				return match(k)
-			elsif k.is_a? Number
+			elsif k.is_a? Integer
 				return real_at(at(k))
 			end
 			return nil
 		end
-		alias_method :[], :find
+		
+		def [](k)
+			find k
+		end
 		
 		def match(pkt)
 			Enumerator.new do |y|
@@ -242,29 +320,25 @@ module Seabright
 		end
 		
 		def real_at(key)
-			RedisObject.find_by_key(key)
+			class_const.find_by_key(key)
 		end
-		
-		# def [](idx)
-		# 	class_const.find_by_key(at(idx))
-		# end
 		
 		def objects
 			each.to_a
 		end
 		
 		def first
-			RedisObject.find_by_key(super)
+			class_const.find_by_key(super)
 		end
 		
 		def last
-			RedisObject.find_by_key(super)
+			class_const.find_by_key(super)
 		end
 		
 		def each
 			out = Enumerator.new do |y|
 				each_index do |key|
-					if a = RedisObject.find_by_key(at(key))
+					if a = class_const.find_by_key(at(key))
 						y << a
 					end
 				end
@@ -280,7 +354,7 @@ module Seabright
 		
 		def cleanup!
 			each_index do |key|
-				unless a = RedisObject.find_by_key(at(key))
+				unless a = class_const.find_by_key(at(key))
 					puts "Deleting #{key} because not #{a.inspect}" if DEBUG
 					delete at(key)
 				end
@@ -299,7 +373,7 @@ module Seabright
 			return nil unless block_given?
 			Enumerator.new do |y|
 				each_index do |key|
-					if (a = RedisObject.find_by_key(at(key))) && block.call(a)
+					if (a = class_const.find_by_key(at(key))) && block.call(a)
 						y << a
 					end
 				end
@@ -321,36 +395,35 @@ module Seabright
 			store.zadd(key,store.zcount(key,"-inf", "+inf"),k)
 			super(k)
 		end
-		alias_method :push, :<<
+		
+		def push(obj)
+			self << obj
+		end
 		
 		def class_const
-			Object.const_get(@name.to_s.classify.to_sym)
+			self.class.class_const_for(@name)
+		end
+		
+		def store
+			class_const.store
 		end
 		
 		def key
-			"#{@parent ? "#{@parent.key}:" : ""}COLLECTION:#{@name}"
+			"#{@owner ? "#{@owner.key}:" : ""}COLLECTION:#{@name}"
 		end
 		
 		class << self
 			
-			def load(name,parent)
-				out = new(name,parent)
-				out.replace store.zrange(out.key,0,-1)
+			def load(name,owner)
+				out = new(name,owner)
+				out.replace class_const_for(name).store.zrange(out.key,0,-1)
 				out
 			end
 			
-			private
-			
-			def store
-				@@store ||= RedisObject.store
+			def class_const_for(name)
+				Object.const_get(name.to_s.classify.to_sym)
 			end
-			
-		end
-		
-		private
-		
-		def store
-			@@store ||= RedisObject.store
+
 		end
 		
 	end

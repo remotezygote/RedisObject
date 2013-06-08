@@ -7,22 +7,39 @@ module Seabright
 			set(:updated_at, Time.now)
 		end
 		
-		def mset(dat)
-			super(dat)
-			set(:updated_at, Time.now)
-		end
-		
-		def set(k,v)
-			super(k,v)
-			set(:updated_at, Time.now) unless k.to_sym == :updated_at
-		end
-		
-		def save
-			super
-			update_timestamps
-		end
-		
 		module ClassMethods
+			
+			def intercept_sets_for_timestamps!
+				return if @intercepted_sets_for_timestamps
+				self.class_eval do
+					alias_method :untimestamped_set, :set unless method_defined?(:untimestamped_set)
+					def set(k,v)
+						ret = untimestamped_set(k,v)
+						set(:updated_at, Time.now) unless k.to_sym == :updated_at
+						ret
+					end
+					alias_method :untimestamped_mset, :mset unless method_defined?(:untimestamped_mset)
+					def mset(dat)
+						ret = untimestamped_mset(dat)
+						set(:updated_at, Time.now)
+						ret
+					end
+					alias_method :untimestamped_setnx, :setnx unless method_defined?(:untimestamped_setnx)
+					def setnx(k,v)
+						ret = untimestamped_setnx(k,v)
+						set(:updated_at, Time.now) unless k.to_sym == :updated_at
+						ret
+					end
+					alias_method :untimestamped_save, :save unless method_defined?(:untimestamped_save)
+					def save
+						ret = untimestamped_save()
+						update_timestamps
+						ret
+					end
+				end
+				@intercepted_sets_for_timestamps = true
+			end
+			
 			
 			def time_matters_not!
 				@@time_irrelevant = true
@@ -47,6 +64,7 @@ module Seabright
 			base.send(:register_format,:created_at, :date)
 			base.send(:register_format,:updated_at, :date)
 			base.extend(ClassMethods)
+			base.intercept_sets_for_timestamps!
 		end
 		
 	end

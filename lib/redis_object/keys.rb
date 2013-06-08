@@ -15,15 +15,15 @@ module Seabright
 		
 		module ClassMethods
 			
-			def key(ident)
-				"#{cname}:#{ident.gsub(/^.*:/,'')}"
+			def key(ident=nil)
+				"#{cname}#{ident ? ":#{ident.gsub(/^.*:/,'')}" : ""}"
 			end
 			
-			def reserve_key(ident)
+			def reserve_key(ident=nil)
 				"#{key(ident)}_reserve"
 			end
 			
-			def hkey(ident = id)
+			def hkey(ident = nil)
 				"#{key(ident)}_h"
 			end
 			
