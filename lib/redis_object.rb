@@ -4,6 +4,7 @@ require 'yajl'
 
 require "redis_object/storage"
 
+require "redis_object/ext/script_cache"
 require "redis_object/base"
 require "redis_object/inheritance_tracking"
 require "redis_object/storage"
@@ -14,20 +15,27 @@ require "redis_object/collection"
 require "redis_object/indices"
 require "redis_object/timestamps"
 require "redis_object/history"
+require "redis_object/ext/views"
+require "redis_object/ext/view_caching"
 require "redis_object/ext/triggers"
+require "redis_object/ext/filters"
 require "redis_object/ext/benchmark"
 
 module Seabright
 	class RedisObject
 		
+		include Seabright::Filters
 		include Seabright::ObjectBase
 		include Seabright::InheritanceTracking
+		include Seabright::CachedScripts
 		include Seabright::Storage
 		include Seabright::Keys
 		include Seabright::Types
 		include Seabright::DefaultValues
 		include Seabright::Collections
 		include Seabright::Indices
+		include Seabright::Views
+		include Seabright::ViewCaching
 		include Seabright::Timestamps
 		include Seabright::History
 		include Seabright::Triggers

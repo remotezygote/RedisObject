@@ -23,15 +23,18 @@ module Seabright
 			end
 			
 			def reset
-				@connections.each_index do |i|
-					@connections[i] = nil
+				connections.each_index do |i|
+					connections[i] = nil
 				end
 			end
 			alias_method :reconnect!, :reset
 			
 			def connection(num=0)
+				connections[num] ||= new_connection
+			end
+			
+			def connections
 				@connections ||= []
-				@connections[num] ||= new_connection
 			end
 			
 			def new_connection

@@ -7,7 +7,7 @@ module Seabright
 					args = send(f,*args)
 				end
 			end
-			method(*args)
+			send("unfiltered_#{method.to_s}".to_sym,*args)
 		end
 		
 		module ClassMethods
@@ -29,7 +29,8 @@ module Seabright
 			end
 			
 			def filter!(method)
-				self.class.instance_exec("")
+				self.send(:alias_method, "unfiltered_#{method.to_s}".to_sym, method.to_sym)
+				self.send(:define_method, method.to_sym, &Proc.new{ |*args| filtered(method,*args) })
 			end
 			
 			def method_filters

@@ -19,8 +19,11 @@ module Seabright
 				adapters[id] ||= const_get(adapter).new(config(id))
 			end
 			
-			def configure_store(conf,id=store_name)
+			def configure_store(conf,id=store_name,*ids)
 				configs[id] = conf
+				ids.each do |i|
+					configs[i] = conf
+				end
 				store(id)
 			end
 			
@@ -55,6 +58,10 @@ module Seabright
 				configs[id]
 			end
 			
+			def stores
+				adapters
+			end
+			
 			def dump_stores_to_files(path)
 				raise "Directory does not exist!" unless Dir.exists?(File.dirname(path))
 				adapters.each do |name,adptr|
@@ -71,10 +78,6 @@ module Seabright
 					name = file.gsub(/\.[^\.]+$/,'').gsub(/.*\//,'').to_sym
 					if (stor = store(name)) && stor.respond_to?(:restore_from_file)
 						puts "Restoring #{name} from #{file}"
-						# if stor.respond_to?(:flushdb)
-						# 	stor.flushdb
-						# 	sleep 2
-						# end
 						stor.restore_from_file("#{path}/#{file}")
 					end
 				end

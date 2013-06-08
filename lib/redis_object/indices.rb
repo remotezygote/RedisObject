@@ -1,41 +1,46 @@
 module Seabright
 	module Indices
 		
-		# def save_indices
-		# 	# self.class.indices.each do |indx|
-		# 	# 	indx.each do |key,idx|
-		# 	# 		
-		# 	# 	end
-		# 	# end
-		# 	self.class.sort_indices.each do |idx|
-		# 		store.zadd(index_key(idx), send(idx).to_i, hkey)
-		# 	end
-		# end
-		
 		def index_key(idx)
 			self.class.index_key(idx)
 		end
 		
-		# def save
-		# 	super
-		# 	save_indices
-		# end
-		
-		def mset(dat)
-			super(dat)
-			dat.select {|k,v| self.class.has_sort_index?(k) }.each do |k,v|
-				store.zadd(index_key(k), score_format(k,v), hkey)
-			end
-		end
-		
-		def set(k,v)
-			super(k,v)
-			if self.class.has_sort_index?(k)
-				store.zadd(index_key(k), score_format(k,v), hkey)
-			end
-		end
-		
 		module ClassMethods
+			
+			def intercept_sets_for_indices!
+				return if @intercepted_sets_for_indices
+				self.class_eval do
+					alias_method :unindexed_set, :set unless method_defined?(:unindexed_set)
+					def set(k,v)
+						ret = unindexed_set(k,v)
+						if self.class.has_sort_index?(k)
+							store.zrem(index_key(k), hkey)
+							store.zadd(index_key(k), score_format(k,v), hkey)
+						end
+						ret
+					end
+					alias_method :unindexed_mset, :mset unless method_defined?(:unindexed_mset)
+					def mset(dat)
+						ret = unindexed_mset(dat)
+						dat.select {|k,v| self.class.has_sort_index?(k) }.each do |k,v|
+							store.zrem(index_key(k), hkey)
+							store.zadd(index_key(k), score_format(k,v), hkey)
+						end
+						ret
+					end
+					alias_method :unindexed_setnx, :setnx unless method_defined?(:unindexed_setnx)
+					def setnx(k,v)
+						ret = unindexed_setnx(k,v)
+						if self.class.has_sort_index?(k)
+							store.zrem(index_key(k), hkey)
+							store.zadd(index_key(k), score_format(k,v), hkey)
+						end
+						ret
+					end
+					
+				end
+				@intercepted_sets_for_indices = true
+			end
 			
 			def indexed(idx,num=-1,reverse=false)
 				out = Enumerator.new do |yielder|
@@ -58,20 +63,20 @@ module Seabright
 				"#{self.plname}::#{idx}"
 			end
 			
-			# def index(opts)
-			# 	indices << opts
-			# end
-			# 
-			# def indices
-			# 	@@indices ||= []
-			# end
-			
 			def sort_indices
 				@@sort_indices ||= []
 			end
 			
 			def sort_by(k)
 				sort_indices << k.to_sym
+				intercept_sets_for_indices!
+			end
+			
+			def reindex(k)
+				store.del index_key(k)
+				all.each do |obj|
+					obj.set(k,obj.get(k))
+				end
 			end
 			
 			def has_sort_index?(k)

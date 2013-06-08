@@ -11,13 +11,17 @@ module Seabright
 					puts "Rescued: #{err.inspect}" if DEBUG
 					reset
 					connection.send(sym,*args, &block)
+				rescue ::Redis::TimeoutError => err
+					puts "Rescued connection timeout: #{err.inspect}" if DEBUG
+					reset
+					connection.send(sym,*args, &block)
 				end
 			end
 			
 			def new_connection
 				require 'redis'
-				puts "Connecting to Redis with: #{config_opts(:path, :db, :password, :host, :port).inspect}" if DEBUG
-				::Redis.new(config_opts(:path, :db, :password, :host, :port))
+				puts "Connecting to Redis with: #{config_opts(:path, :db, :password, :host, :port, :timeout, :tcp_keepalive).inspect}" if DEBUG
+				::Redis.new(config_opts(:path, :db, :password, :host, :port, :timeout, :tcp_keepalive))
 			end
 			
 			DUMP_SEPARATOR = "---:::RedisObject::DUMP_SEPARATOR:::---"
