@@ -8,9 +8,9 @@ module TypeSpec
 		int: 356192,
 		float: 72.362517,
 		bool: true,
-		boolean: false,
+		# boolean: false,
 		# array: [:test1,:test2],
-		# json: {test1: true, test2: "false"}
+		json: {test1: true, test2: "false"}
 	}
 	
 	TestData = TestValues.inject({}){|acc,(k,v)| acc["a_#{k}".to_sym] = v; acc }
@@ -18,9 +18,7 @@ module TypeSpec
 	# Delicious pizza!
 	class TypedObject < RedisObject
 		TestValues.keys.each do |type|
-			puts "Setting up: send(#{type.to_sym},\"a_#{type}\".to_sym)"
 			send(type.to_sym,"a_#{type}".to_sym)
-			puts field_formats.inspect
 		end
 	end
 	
@@ -58,13 +56,14 @@ module TypeSpec
 			
 		end
 		
-		it "can be created instantiated via individual sets" do
+		it "can be created via individual sets" do
 			
 			obj = TypedObject.new
 			
 			TestValues.each do |k,v|
 				obj.set(k,v)
 				obj.get(k).should satisfy{|n|
+					puts "#{n.class} is_a? #{v.class}"
 					n.is_a?(v.class)
 				}
 				obj.get(k).should == v

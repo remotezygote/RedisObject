@@ -37,8 +37,9 @@ module RenameClassSpec
 			olive_oil  = Topping.find(:olive_oil)
 
 			[ mozzarella, basil, tomato, garlic, oregano, olive_oil ].each do |topping|
+				puts topping.inspect
 				topping.get(:class).should == Topping.name
-				topping.get(:key).should == "Topping:#{topping.id}"
+				topping.get(:key).should == "RenameClassSpec::Topping:#{topping.id}"
 				topping.get(:topping_id).should == topping.id
 			end
 
@@ -71,8 +72,11 @@ module RenameClassSpec
 			olive_oil  = PizzaTopping.find(:olive_oil)
 
 			[ mozzarella, basil, tomato, garlic, oregano, olive_oil ].each do |topping|
+				puts topping.inspect
+				puts topping.get(:class)
+				puts PizzaTopping.name
 				topping.get(:class).should == PizzaTopping.name
-				topping.get(:key).should == "PizzaTopping:#{topping.id}"
+				topping.get(:key).should == "RenameClassSpec::PizzaTopping:#{topping.id}"
 				topping.get(:pizzatopping_id).should == topping.id
 				topping.get(:topping_id).should == nil
 			end

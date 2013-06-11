@@ -111,7 +111,7 @@ module Seabright
 				collections[name.to_s] ||= Collection.load(name,self)
 			else
 				store.sadd hkey_col, name
-				@collection_names << name
+				@collection_names << name.to_s
 				collections[name.to_s] ||= Collection.load(name,self)
 				define_access(name.to_s.pluralize) do
 					get_collection(name)
@@ -422,7 +422,7 @@ module Seabright
 			end
 			
 			def class_const_for(name)
-				Object.const_get(name.to_s.classify.to_sym)
+				Object.const_get(name.to_s.classify.to_sym) rescue RedisObject
 			end
 
 		end
