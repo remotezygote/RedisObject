@@ -101,6 +101,7 @@ module Seabright
 		
 		def mset(dat)
 			store.hmset(hkey, *(dat.inject([]){|acc,(k,v)| acc + [k,v] }))
+			cached_hash_values.merge!(dat)
 			dat.each do |k,v|
 				define_setter_getter(k)
 			end

@@ -52,6 +52,7 @@ module Seabright
 		alias_method :score_float, :format_float
 		
 		def format_json(val)
+			return val if val.is_a?(String)
 			Yajl::Parser.new(:symbolize_keys => true).parse(val)
 		end
 		

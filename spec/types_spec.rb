@@ -22,8 +22,6 @@ module TypeSpec
 		end
 	end
 	
-	puts TypedObject.describe
-	
 	describe Seabright::Types do
 		before do
 			RedisObject.store.flushdb
@@ -35,7 +33,6 @@ module TypeSpec
 			
 			TestData.each do |k,v|
 				obj.get(k).should satisfy{|n|
-					puts "#{n.class} is_a? #{v.class}"
 					n.is_a?(v.class)
 				}
 				obj.get(k).should == v
@@ -63,8 +60,26 @@ module TypeSpec
 			TestValues.each do |k,v|
 				obj.set(k,v)
 				obj.get(k).should satisfy{|n|
-					puts "#{n.class} is_a? #{v.class}"
 					n.is_a?(v.class)
+				}
+				obj.get(k).should == v
+			end
+			
+		end
+		
+		it "gets correct values after being found" do
+			
+			objc = TypedObject.create(TestData)
+			obj = TypedObject.find(objc.id)
+			
+			TestData.each do |k,v|
+				obj.get(k).should satisfy{|n|
+					if n.is_a?(v.class)
+						true
+					else
+						puts "  #{k} failed: #{n.class.name} / #{v.class.name}"
+						false
+					end
 				}
 				obj.get(k).should == v
 			end
