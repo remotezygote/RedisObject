@@ -82,6 +82,10 @@ module Seabright
 						end
 					end
 					
+					def view_is_cached?(name)
+						store.hexists(cached_view_key, name)
+					end
+					
 					def cached_view_key
 						"#{hkey}::ViewCache"
 					end
@@ -133,7 +137,7 @@ module Seabright
 						return unless self.class.upstream_invalidations && (self.class.upstream_invalidations.size > 0)
 						puts "Invalidating upstream: #{self.class.upstream_invalidations.inspect}" if Debug.verbose?
 						backreferences.each do |obj|
-							next unless self.class.upstream_invalidations.include?(obj.class.name.to_sym) #|| self.class.invalidate_everything_upstream?
+							next unless self.class.upstream_invalidations.include?(obj.class.name.split("::").last.to_sym) #|| self.class.invalidate_everything_upstream?
 							obj.invalidated_by_other(self,invalidation_chain + [self.hkey]) if obj.respond_to?(:invalidated_by_other)
 						end
 					end

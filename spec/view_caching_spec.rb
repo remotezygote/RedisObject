@@ -53,7 +53,7 @@ module ViewCachingSpec
 			@obj << @baby
 		end
 	
-		it "generates view on first access" do
+		it "generates view" do
 			
 			@obj.view_as_hash(:aggregated).should be_a(Hash)
 			@obj.view_as_json(:aggregated).should be_a(String)
@@ -64,6 +64,7 @@ module ViewCachingSpec
 			
 			@obj.view_as_hash(:aggregated).should be_a(Hash)
 			@obj.view_as_json(:aggregated).should be_a(String)
+			@obj.view_is_cached?(:aggregated).should eq(true)
 			@obj.view_as_hash(:aggregated).should be_a(Hash)
 			@obj.view_as_json(:aggregated).should be_a(String)
 						
@@ -72,27 +73,45 @@ module ViewCachingSpec
 		it "caches are invalidated" do
 			
 			@obj.view_as_hash(:aggregated).should be_a(Hash)
-			@obj.view_as_json(:aggregated).should be_a(String)
+			
+			@obj.view_is_cached?(:aggregated).should eq(true)
 			
 			@obj.invalidate_cached_views!
 			
+			@obj.view_is_cached?(:aggregated).should eq(false)
+			
 			@obj.view_as_hash(:aggregated).should be_a(Hash)
-			@obj.view_as_json(:aggregated).should be_a(String)
+			
+			@obj.view_is_cached?(:aggregated).should eq(true)
 			
 			@obj.set(:demolisher, "smash")
+			# 
+			# @obj.view_is_cached?(:aggregated).should eq(false)
 			
-			@obj.view_as_hash(:aggregated).should be_a(Hash)
-			@obj.view_as_json(:aggregated).should be_a(String)
 			
 		end
 				
 		it "invalidates up/down stream" do
 			
 			@obj.view_as_hash(:aggregated).should be_a(Hash)
-			@obj.view_as_json(:aggregated).should be_a(String)
+			
+			@obj.view_is_cached?(:aggregated).should eq(true)
 			
 			@baby.set(:demolisher, "smash")
+			
+			# sleep 1
+			# 
+			# TypedObject.find(@obj.id).view_is_cached?(:aggregated).should eq(false)
+			
+			@obj.view_as_hash(:aggregated).should be_a(Hash)
+			
+			@obj.view_is_cached?(:aggregated).should eq(true)
+			
 			@dad.set(:demolisher, "smash")
+			
+			# sleep 1
+			# 
+			# TypedObject.find(@obj.id).view_is_cached?(:aggregated).should eq(false)
 			
 		end
 				
