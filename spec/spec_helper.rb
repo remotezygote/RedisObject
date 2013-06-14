@@ -4,6 +4,11 @@ $LOAD_PATH.unshift File.dirname(__FILE__)
 require 'rubygems'
 require 'test/unit'
 require 'rspec'
+
+require 'simplecov'
+SimpleCov.start do
+  add_filter "_spec.rb"
+end
 require 'redis_object'
 
 class DebugMode

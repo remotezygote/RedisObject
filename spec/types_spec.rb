@@ -74,12 +74,7 @@ module TypeSpec
 			
 			TestData.each do |k,v|
 				obj.get(k).should satisfy{|n|
-					if n.is_a?(v.class)
-						true
-					else
-						puts "  #{k} failed: #{n.class.name} / #{v.class.name}"
-						false
-					end
+					n.is_a?(v.class)
 				}
 				obj.get(k).should == v
 			end
