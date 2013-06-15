@@ -226,7 +226,6 @@ module Seabright
 					
 					alias_method :untyped_get, :get unless method_defined?(:untyped_get)
 					def get(k)
-						puts "Typed get for #{k}: #{untyped_get(k).inspect} -> #{enforce_format(k,untyped_get(k)).inspect}"
 						enforce_format(k,untyped_get(k))
 					end
 					
