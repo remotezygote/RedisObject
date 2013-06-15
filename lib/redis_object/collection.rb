@@ -2,19 +2,19 @@ module Seabright
 	
 	module Collections
 		
-		def dump
-			require "utf8_utils"
-			out = ["puts \"Creating: #{id}\""]
-			s_id = id.gsub(/\W/,"_")
-			out << "a#{s_id} = #{self.class.cname}.new(#{actual.to_s.tidy_bytes})"
-			collections.each do |col|
-				col.each do |sobj|
-					out << sobj.dump(self)
-				end
-			end
-			out << "a#{s_id}.save"
-			out.join("\n")
-		end
+		# def dump
+		# 	require "utf8_utils"
+		# 	out = ["puts \"Creating: #{id}\""]
+		# 	s_id = id.gsub(/\W/,"_")
+		# 	out << "a#{s_id} = #{self.class.cname}.new(#{actual.to_s.tidy_bytes})"
+		# 	collections.each do |col|
+		# 		col.each do |sobj|
+		# 			out << sobj.dump
+		# 		end
+		# 	end
+		# 	out << "a#{s_id}.save"
+		# 	out.join("\n")
+		# end
 		
 		def hkey_col(ident = nil)
 			"#{hkey}:collections"
@@ -35,8 +35,8 @@ module Seabright
 		end
 		
 		def delete_child(obj)
-			if col = collections[obj.collection_name]
-				col.delete obj.hkey
+			if col = get_collection(obj.collection_name)
+				col.delete obj
 			end
 		end
 		
@@ -148,8 +148,8 @@ module Seabright
 			end
 			
 			def delete_child(obj)
-				if col = collections[obj.collection_name]
-					col.delete obj.hkey
+				if col = get_collection(obj.collection_name)
+					col.delete obj
 				end
 			end
 			
@@ -157,10 +157,10 @@ module Seabright
 				self.name.split('::').last.pluralize.underscore.to_sym
 			end
 			
-			def ref_key(ident = nil)
-				"#{hkey(ident)}:backreferences"
-			end
-			
+			# def ref_key(ident = nil)
+			# 	"#{hkey(ident)}:backreferences"
+			# end
+			# 
 			def reference(obj)
 				name = obj.collection_name
 				store.sadd hkey_col, name
@@ -179,32 +179,32 @@ module Seabright
 				store.srem hkey_col, name
 			end
 			
-			def referenced_by(obj)
-				store.sadd(ref_key,obj.hkey)
-			end
-			
-			def backreferences(cls = nil)
-				out = store.smembers(ref_key).map do |backreference_hkey|
-					obj = RedisObject.find_by_key(backreference_hkey)
-					if cls && !obj.is_a?(cls)
-						nil
-					else
-						obj
-					end
-				end
-				out.compact
-			end
-			
-			def dereference_from(obj)
-				obj.get_collection(collection_name).delete(hkey)
-			end
-			
-			def dereference_from_backreferences
-				backreferences.each do |backreference|
-					dereference_from(backreference)
-				end
-			end
-			
+			# def referenced_by(obj)
+			# 	store.sadd(ref_key,obj.hkey)
+			# end
+			# 
+			# def backreferences(cls = nil)
+			# 	out = store.smembers(ref_key).map do |backreference_hkey|
+			# 		obj = RedisObject.find_by_key(backreference_hkey)
+			# 		if cls && !obj.is_a?(cls)
+			# 			nil
+			# 		else
+			# 			obj
+			# 		end
+			# 	end
+			# 	out.compact
+			# end
+			# 
+			# def dereference_from(obj)
+			# 	obj.get_collection(collection_name).delete(hkey)
+			# end
+			# 
+			# def dereference_from_backreferences
+			# 	backreferences.each do |backreference|
+			# 		dereference_from(backreference)
+			# 	end
+			# end
+			# 
 			def get(k)
 				if has_collection?(k)
 					get_collection(k)
@@ -250,7 +250,7 @@ module Seabright
 		end
 		
 		def latest
-			indexed(:created_at,5,true).first
+			indexed(:created_at,5,true).first || first
 		end
 		
 		def indexed(idx,num=-1,reverse=false)

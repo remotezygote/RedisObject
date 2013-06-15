@@ -8,6 +8,8 @@ require 'rspec'
 require 'simplecov'
 SimpleCov.start do
   add_filter "_spec.rb"
+	add_group "Extensions", "lib/redis_object/ext/"
+	add_group "Experimental", "lib/redis_object/experimental/"
 end
 require 'redis_object'
 
@@ -26,4 +28,4 @@ Debug = if ENV['DEBUG']
 	end
 
 raise 'must specify TEST_DB' unless ENV['TEST_DB']
-RedisObject.configure_store({adapter:'Redis', db:ENV['TEST_DB']})
+RedisObject.configure_store({adapter:'Redis', db:ENV['TEST_DB']},:global,:alias)

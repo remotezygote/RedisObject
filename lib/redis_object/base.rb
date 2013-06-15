@@ -32,14 +32,14 @@ module Seabright
 			Yajl::Encoder.encode(actual)
 		end
 		
-		def dump
-			require "utf8_utils"
-			out = ["puts \"Creating: #{id}\""]
-			s_id = id.gsub(/\W/,"_")
-			out << "a#{s_id} = #{self.class.cname}.new(#{actual.to_s.tidy_bytes})"
-			out << "a#{s_id}.save"
-			out.join("\n")
-		end
+		# def dump
+		# 	require "utf8_utils"
+		# 	out = ["puts \"Creating: #{id}\""]
+		# 	s_id = id.gsub(/\W/,"_")
+		# 	out << "a#{s_id} = #{self.class.cname}.new(#{actual.to_s.tidy_bytes})"
+		# 	out << "a#{s_id}.save"
+		# 	out.join("\n")
+		# end
 		
 		def id
 			@id || get(id_sym) || set(id_sym, generate_id)
@@ -362,13 +362,13 @@ module Seabright
 				obj
 			end
 			
-			def dump
-				out = []
-				each do |obj|
-					out << obj.dump
-				end
-				out.join("\n")
-			end
+			# def dump
+			# 	out = []
+			# 	each do |obj|
+			# 		out << obj.dump
+			# 	end
+			# 	out.join("\n")
+			# end
 			
 			def use_dbnum(db=0)
 				@dbnum = db

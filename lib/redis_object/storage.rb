@@ -78,7 +78,7 @@ module Seabright
 					name = file.gsub(/\.[^\.]+$/,'').gsub(/.*\//,'').to_sym
 					if (stor = store(name)) && stor.respond_to?(:restore_from_file)
 						puts "Restoring #{name} from #{file}"
-						stor.restore_from_file("#{path}/#{file}")
+						stor.restore_from_file(file)
 					end
 				end
 			end
