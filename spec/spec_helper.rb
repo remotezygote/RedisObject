@@ -5,8 +5,18 @@ require 'rubygems'
 require 'test/unit'
 require 'rspec'
 
+require 'simplecov'
 require 'coveralls'
-Coveralls.wear!
+
+SimpleCov.formatter = SimpleCov::Formatter::MultiFormatter[
+  SimpleCov::Formatter::HTMLFormatter,
+  Coveralls::SimpleCov::Formatter
+]
+SimpleCov.start do
+	add_filter "_spec.rb"
+	add_filter "/experimental/"
+	add_group "Extensions", "lib/redis_object/ext/"
+end
 
 require 'redis_object'
 
