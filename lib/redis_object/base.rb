@@ -3,11 +3,11 @@ module Seabright
 		
 		def initialize(ident={})
 			if ident && (ident.class == String || (ident.class == Symbol && (ident = ident.to_s)))# && ident.gsub!(/.*:/,'') && ident.length > 0
-				load(ident)
+				load(ident.dup)
 			elsif ident && ident.class == Hash
 				ident[id_sym] ||= generate_id
 				if load(ident[id_sym])
-					mset(ident)
+					mset(ident.dup)
 				end
 			end
 			# if self.class.load_hash_on_init?
@@ -30,15 +30,6 @@ module Seabright
 		
 		def to_json
 			Yajl::Encoder.encode(actual)
-		end
-		
-		def dump
-			require "utf8_utils"
-			out = ["puts \"Creating: #{id}\""]
-			s_id = id.gsub(/\W/,"_")
-			out << "a#{s_id} = #{self.class.cname}.new(#{actual.to_s.tidy_bytes})"
-			out << "a#{s_id}.save"
-			out.join("\n")
 		end
 		
 		def id
@@ -101,6 +92,7 @@ module Seabright
 		
 		def mset(dat)
 			store.hmset(hkey, *(dat.inject([]){|acc,(k,v)| acc + [k,v] }))
+			cached_hash_values.merge!(dat)
 			dat.each do |k,v|
 				define_setter_getter(k)
 			end
@@ -361,13 +353,13 @@ module Seabright
 				obj
 			end
 			
-			def dump
-				out = []
-				each do |obj|
-					out << obj.dump
-				end
-				out.join("\n")
-			end
+			# def dump
+			# 	out = []
+			# 	each do |obj|
+			# 		out << obj.dump
+			# 	end
+			# 	out.join("\n")
+			# end
 			
 			def use_dbnum(db=0)
 				@dbnum = db
