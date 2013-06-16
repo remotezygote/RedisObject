@@ -80,7 +80,7 @@ module TypeSpec
 		it "describes itself" do
 			
 			puts TypedObject.describe
-			TypedObject.dump_schema($stdout)
+			TypedObject.dump_schema(File.open("/tmp/redisobject_dump_test","w"))
 			
 		end
 		
