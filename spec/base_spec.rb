@@ -39,6 +39,16 @@ describe RedisObject do
 		obj.save
 	end
 	
+	it "can create an id" do
+		obj = ObjectTests::User.new("test")
+		obj.new_id
+	end
+	
+	it "can reserve an id" do
+		obj = ObjectTests::User.new("test")
+		obj.reserve("test")
+	end
+	
 	it "should be found by id" do
 		obj = ObjectTests::User.find("test")
 		obj.should_not be_nil
@@ -67,6 +77,11 @@ describe RedisObject do
 		obj3 = ObjectTests::Doodad.new("woo")
 		obj.reference obj3
 		obj.should have_collection(:doodads)
+	end
+	
+	it "can convert raw to json" do
+		obj = ObjectTests::User.find("test")
+		obj.to_json.length.should > 0
 	end
 	
 	it "should be deletable" do

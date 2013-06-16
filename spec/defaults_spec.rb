@@ -16,7 +16,7 @@ module DefaultSpec
 	TestData = TestValues.inject({}){|acc,(k,v)| acc["a_#{k}".to_sym] = v; acc }
 	
 	# Delicious pizza!
-	class TypedObject < RedisObject
+	class DefaultedObject < RedisObject
 		
 		TestValues.keys.each do |type|
 			send(type.to_sym,"a_#{type}".to_sym)
@@ -33,7 +33,7 @@ module DefaultSpec
 		
 		it "returns default value" do
 			
-			obj = TypedObject.create(TestData)
+			obj = DefaultedObject.create(TestData)
 			
 			obj.testy.should eq("test")
 			obj.get(:a_number).should eq(27)
@@ -44,7 +44,7 @@ module DefaultSpec
 				
 		it "returns default value after unset" do
 			
-			obj = TypedObject.create(TestData)
+			obj = DefaultedObject.create(TestData)
 			
 			obj.get(:a_number).should eq(27)
 			obj.unset(:a_number)

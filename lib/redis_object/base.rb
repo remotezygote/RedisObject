@@ -3,11 +3,11 @@ module Seabright
 		
 		def initialize(ident={})
 			if ident && (ident.class == String || (ident.class == Symbol && (ident = ident.to_s)))# && ident.gsub!(/.*:/,'') && ident.length > 0
-				load(ident)
+				load(ident.dup)
 			elsif ident && ident.class == Hash
 				ident[id_sym] ||= generate_id
 				if load(ident[id_sym])
-					mset(ident)
+					mset(ident.dup)
 				end
 			end
 			# if self.class.load_hash_on_init?
