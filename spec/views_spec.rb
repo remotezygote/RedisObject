@@ -58,7 +58,7 @@ module ViewSpec
 		
 		it "executes procs within view" do
 			
-			@obj.view_as_hash(:proc).should be_a(Hash)
+			@obj.view_as_json(:proc).should be_a(String)
 			
 		end
 		

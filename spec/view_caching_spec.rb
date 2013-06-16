@@ -17,8 +17,10 @@ module ViewCachingSpec
 	
 	class TypedObject < RedisObject
 		
+		named_view :miss_json, :a_number
 		named_view :aggregated, :a_float, :a_bool, :aggregate
 		cache_view :aggregated
+		cache_view :miss_json
 		
 		TestValues.keys.each do |type|
 			send(type.to_sym,"a_#{type}".to_sym)
@@ -67,6 +69,8 @@ module ViewCachingSpec
 			@obj.view_is_cached?(:aggregated).should eq(true)
 			@obj.view_as_hash(:aggregated).should be_a(Hash)
 			@obj.view_as_json(:aggregated).should be_a(String)
+			
+			@obj.view_as_json(:miss_json).should be_a(String)
 						
 		end
 				
