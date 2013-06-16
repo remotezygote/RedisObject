@@ -52,10 +52,10 @@ module Seabright
 			end
 
 			def rename_class old_name, new_name
-				old_name = old_name.to_s.split('::').last
-				new_name = new_name.to_s.split('::').last
-				old_collection_name = old_name.underscore.pluralize
-				new_collection_name = new_name.underscore.pluralize
+				old_name = old_name.to_s#.split('::').last
+				new_name = new_name.to_s#.split('::').last
+				old_collection_name = old_name.split('::').last.underscore.pluralize
+				new_collection_name = new_name.split('::').last.underscore.pluralize
 
 				# references to type in collection data
 				keys("#{old_name}:*:backreferences").each do |backref_key|

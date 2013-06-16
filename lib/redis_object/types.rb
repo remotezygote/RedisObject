@@ -23,7 +23,7 @@ module Seabright
 		
 		def format_date(val)
 			begin
-				val.instance_of?(DateTime) ? val : ( val.instance_of?(String) ? DateTime.parse(val) : nil )
+				val.is_a?(DateTime) || val.is_a?(Date) || val.is_a?(Time) ? val : ( val.is_a?(String) ? DateTime.parse(val) : nil )
 			rescue StandardError => e
 				puts "Could not parse value as date using Date.parse. Returning nil instead. Value: #{val.inspect}\nError: #{e.inspect}" if DEBUG
 				nil
@@ -36,6 +36,10 @@ module Seabright
 		
 		def format_array(val)
 			Yajl::Parser.new(:symbolize_keys => true).parse(val)
+		end
+		
+		def save_array(val)
+			Yajl::Encoder.encode(val)
 		end
 		
 		def format_number(val)
@@ -59,12 +63,12 @@ module Seabright
 			Yajl::Encoder.encode(val)
 		end
 		
-		def save_array(val)
-			Yajl::Encoder.encode(val)
-		end
-		
 		def format_boolean(val)
 			val=="true"
+		end
+		
+		def save_boolean(val)
+			val === true ? "true" : "false"
 		end
 		
 		def score_boolean(val)
@@ -92,6 +96,7 @@ module Seabright
 			def bool(k)
 				set_field_format(k, :format_boolean)
 				set_score_format(k, :score_boolean)
+				set_save_format(k, :save_boolean)
 			end
 			alias_method :boolean, :bool
 			
