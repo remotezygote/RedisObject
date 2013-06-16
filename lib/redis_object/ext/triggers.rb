@@ -15,11 +15,16 @@ module Seabright
 					def set(k,v)
 						untriggered_set(k,v)
 						unless self.class.untriggerables.include?(k)
-							if self.class.field_triggers[k.to_sym]
-								send(self.class.field_triggers[k.to_sym],k,v)
-							end
-							self.class.update_triggers.each do |actn|
-								send(actn.to_sym,k,v)
+							begin
+								self.class.untriggerables << k
+								if self.class.field_triggers[k.to_sym]
+									send(self.class.field_triggers[k.to_sym],k,v)
+								end
+								self.class.update_triggers.each do |actn|
+									send(actn.to_sym,k,v)
+								end
+							ensure
+								self.class.untriggerables.delete k
 							end
 						end
 					end
@@ -27,11 +32,16 @@ module Seabright
 					def setnx(k,v)
 						ret = untriggered_setnx(k,v)
 						unless self.class.untriggerables.include?(k)
-							if self.class.field_triggers[k.to_sym]
-								send(self.class.field_triggers[k.to_sym],k,v)
-							end
-							self.class.update_triggers.each do |actn|
-								send(actn.to_sym,k,v)
+							begin
+								self.class.untriggerables << k
+								if self.class.field_triggers[k.to_sym]
+									send(self.class.field_triggers[k.to_sym],k,v)
+								end
+								self.class.update_triggers.each do |actn|
+									send(actn.to_sym,k,v)
+								end
+							ensure
+								self.class.untriggerables.delete k
 							end
 						end
 						ret
