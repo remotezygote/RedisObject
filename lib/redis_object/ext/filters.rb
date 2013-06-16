@@ -1,19 +1,43 @@
 module Seabright
 	module Filters
 		
-		def filtered(method,*args)
-			if filters = self.class.filters_for(method)
-				filters.each do |f|
-					args = send(f,*args)
-				end
-			end
-			send("unfiltered_#{method.to_s}".to_sym,*args)
-		end
-		
 		module ClassMethods
+			
+			def intercept_for_filters!
+				return if @intercept_for_filters
+				self.class_eval do
+					
+					def filtered_method_call(method,*args)
+						if filters = self.class.filters_for(method)
+							filters.each do |f|
+								args = send(f,*args)
+							end
+						end
+						send("unfiltered_#{method.to_s}".to_sym,*args)
+					end
+					
+					alias_method :unfiltered_get, :get unless method_defined?(:unfiltered_get)
+					def get(k)
+						filtered_method_call(:get,k)
+					end
+					
+					alias_method :unfiltered_set, :set unless method_defined?(:unfiltered_set)
+					def set(k,v)
+						filtered_method_call(:set,k,v)
+					end
+					
+					alias_method :unfiltered_setnx, :setnx unless method_defined?(:unfiltered_setnx)
+					def setnx(k,v)
+						filtered_method_call(:setnx,k,v)
+					end
+					
+				end
+				@intercept_for_filters = true
+			end
 			
 			def set_filter(filter)
 				filter_method(:set,filter)
+				filter_method(:setnx,filter)
 			end
 			
 			def get_filter(filter)
@@ -21,16 +45,9 @@ module Seabright
 			end
 			
 			def filter_method(method, filter)
-				unless method_filters[method.to_sym]
-					method_filters[method.to_sym] ||= []
-					filter!(method.to_sym)
-				end
+				method_filters[method.to_sym] ||= []
 				method_filters[method.to_sym] << filter.to_sym unless method_filters[method.to_sym].include?(filter.to_sym)
-			end
-			
-			def filter!(method)
-				self.send(:alias_method, "unfiltered_#{method.to_s}".to_sym, method.to_sym)
-				self.send(:define_method, method.to_sym, &Proc.new{ |*args| filtered(method,*args) })
+				intercept_for_filters!
 			end
 			
 			def method_filters

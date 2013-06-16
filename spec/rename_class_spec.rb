@@ -38,7 +38,7 @@ module RenameClassSpec
 
 			[ mozzarella, basil, tomato, garlic, oregano, olive_oil ].each do |topping|
 				topping.get(:class).should == Topping.name
-				topping.get(:key).should == "Topping:#{topping.id}"
+				topping.get(:key).should == "RenameClassSpec::Topping:#{topping.id}"
 				topping.get(:topping_id).should == topping.id
 			end
 
@@ -59,7 +59,7 @@ module RenameClassSpec
 		end
 
 		it "renames a class" do
-			RedisObject.store.rename_class(:Topping, :PizzaTopping)
+			RedisObject.store.rename_class(:"RenameClassSpec::Topping", :"RenameClassSpec::PizzaTopping")
 
 			margherita = Pizza.find(:margherita)
 			marinara = Pizza.find(:marinara)
@@ -72,9 +72,9 @@ module RenameClassSpec
 
 			[ mozzarella, basil, tomato, garlic, oregano, olive_oil ].each do |topping|
 				topping.get(:class).should == PizzaTopping.name
-				topping.get(:key).should == "PizzaTopping:#{topping.id}"
-				topping.get(:pizzatopping_id).should == topping.id
-				topping.get(:topping_id).should == nil
+				topping.get(:key).should == "RenameClassSpec::PizzaTopping:#{topping.id}"
+				topping.get(:"renameclassspec::pizzatopping_id").should == topping.id
+				# topping.get(:topping_id).should == nil
 			end
 
 			[margherita, marinara].each do |pizza|
