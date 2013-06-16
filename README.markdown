@@ -1,6 +1,9 @@
 # RedisObject
 RedisObject is a fast and simple-to-use object persistence layer for Ruby.
 
+[![Build Status](https://travis-ci.org/remotezygote/RedisObject.png?branch=master)](https://travis-ci.org/remotezygote/RedisObject)
+[![Coverage Status](https://coveralls.io/repos/remotezygote/RedisObject/badge.png?branch=master)](https://coveralls.io/r/remotezygote/RedisObject?branch=master)
+
 ## Prerequisites
 You'll need [Redis](http://redis.io). Other storage adapters are in the works.
 
