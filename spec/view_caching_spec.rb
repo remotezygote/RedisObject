@@ -74,6 +74,13 @@ module ViewCachingSpec
 						
 		end
 				
+		it "generates view" do
+			
+			@obj.regenerate_cached_views!
+			@obj.view_is_cached?(:aggregated).should eq(true)
+			
+		end
+		
 		it "caches are invalidated" do
 			
 			@obj.view_as_hash(:aggregated).should be_a(Hash)

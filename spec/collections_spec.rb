@@ -41,6 +41,13 @@ module CollectionSpec
 			
 		end
 		
+		it "should cache collection accessors" do
+			
+			@granddad.daddies.should be_a(Seabright::Collection)
+			@granddad.daddy.should be_a(Daddy)
+			
+		end
+		
 		it "should be able to iterate over collected items" do
 			
 			@dad.sons.count.should eq(2)
@@ -103,6 +110,33 @@ module CollectionSpec
 			@dad.collections.keys.should_not include(:sons)
 			@son.remove_collection!(:grand_sons)
 			@son.collections.keys.should_not include(:grand_sons)
+			
+		end
+		
+		it "retrieves via index" do
+			
+			5.times do
+				@dad << Son.create
+			end
+			
+			# @dad.sons.indexed(:created_at,3,true).count.should eq(3)
+			
+			Son.indexed(:created_at,3,true).count.should eq(3)
+			
+		end
+		
+		it "can collect on classes themselves" do
+			
+			5.times do
+				Daddy << Son.create
+			end
+			
+			Daddy.get(:sons).should be_a(Seabright::Collection)
+			Daddy.get(:sons).count.should eq(5)
+			Daddy.get(:son).should be_a(Son)
+			Daddy.delete_child(Daddy.get(:son))
+			Daddy.get(:sons).count.should eq(4)
+			# Daddy.get(:sons).indexed(:created_at,3,true).count.should eq(3)
 			
 		end
 		

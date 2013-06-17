@@ -44,7 +44,7 @@ module Seabright
 			
 			def indexed(idx,num=-1,reverse=false)
 				out = Enumerator.new do |yielder|
-					store.send(reverse ? :zrevrange : :zrange, index_key(idx), 0, num).each do |member|
+					store.send(reverse ? :zrevrange : :zrange, index_key(idx), 0, num-1).each do |member|
 						if a = self.find_by_key(member)
 							yielder << a
 						end

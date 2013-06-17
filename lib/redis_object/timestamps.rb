@@ -2,7 +2,7 @@ module Seabright
 	module Timestamps
 		
 		def update_timestamps
-			return if @@time_irrelevant
+			# return unless self.class.time_matters?
 			set(:created_at, Time.now) if !is_set?(:created_at)
 			set(:updated_at, Time.now)
 		end
@@ -40,13 +40,16 @@ module Seabright
 				@intercepted_sets_for_timestamps = true
 			end
 			
-			
-			def time_matters_not!
-				@@time_irrelevant = true
-				@@sort_indices.delete(:created_at)
-				@@sort_indices.delete(:updated_at)
-			end
-			
+			# def time_matters?
+			# 	@time_irrelevant != true
+			# end
+			# 
+			# def time_matters_not!
+			# 	@time_irrelevant = true
+			# 	sort_indices.delete(:created_at)
+			# 	sort_indices.delete(:updated_at)
+			# end
+			# 
 			def recently_created(num=5)
 				self.indexed(:created_at,num,true)
 			end
@@ -58,7 +61,7 @@ module Seabright
 		end
 		
 		def self.included(base)
-			@@time_irrelevant = false
+			# @time_irrelevant = false
 			base.send(:sort_by,:created_at)
 			base.send(:sort_by,:updated_at)
 			base.send(:register_format,:created_at, :date)
