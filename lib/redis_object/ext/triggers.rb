@@ -11,40 +11,32 @@ module Seabright
 			def intercept_sets_for_triggers!
 				return if @intercepted_sets_for_triggers
 				self.class_eval do
-					alias_method :untriggered_set, :set unless method_defined?(:untriggered_set)
-					def set(k,v)
-						untriggered_set(k,v)
-						unless self.class.untriggerables.include?(k)
-							begin
-								self.class.untriggerables << k
-								if self.class.field_triggers[k.to_sym]
-									send(self.class.field_triggers[k.to_sym],k,v)
-								end
-								self.class.update_triggers.each do |actn|
-									send(actn.to_sym,k,v)
-								end
-							ensure
-								self.class.untriggerables.delete k
+					
+					def triggered_set(cmd,k,v)
+						ret = send("untriggered_#{cmd}".to_sym,k,v)
+						return ret if self.class.untriggerables.include?(k)
+						begin
+							self.class.untriggerables << k
+							if self.class.field_triggers[k.to_sym]
+								send(self.class.field_triggers[k.to_sym],k,v)
 							end
-						end
-					end
-					alias_method :untriggered_setnx, :setnx unless method_defined?(:untriggered_setnx)
-					def setnx(k,v)
-						ret = untriggered_setnx(k,v)
-						unless self.class.untriggerables.include?(k)
-							begin
-								self.class.untriggerables << k
-								if self.class.field_triggers[k.to_sym]
-									send(self.class.field_triggers[k.to_sym],k,v)
-								end
-								self.class.update_triggers.each do |actn|
-									send(actn.to_sym,k,v)
-								end
-							ensure
-								self.class.untriggerables.delete k
+							self.class.update_triggers.each do |actn|
+								send(actn.to_sym,k,v)
 							end
+						ensure
+							self.class.untriggerables.delete k
 						end
 						ret
+					end
+					
+					alias_method :untriggered_set, :set unless method_defined?(:untriggered_set)
+					def set(k,v)
+						triggered_set(:set,k,v)
+					end
+					
+					alias_method :untriggered_setnx, :setnx unless method_defined?(:untriggered_setnx)
+					def setnx(k,v)
+						triggered_set(:setnx,k,v)
 					end
 					
 				end
