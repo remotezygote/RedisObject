@@ -14,22 +14,6 @@ end
 
 describe RedisObject do
 	
-	it "can reconnect to redis" do
-		RedisObject.reconnect!
-		RedisObject.store.reconnect!
-	end
-	
-	it "can dump to a file" do
-		obj = ObjectTests::User.create("test")
-		RedisObject.dump_stores_to_files("/tmp")
-		RedisObject.store.flushdb
-	end
-	
-	it "can restore from a file" do
-		RedisObject.restore_stores_from_files("/tmp")
-		ObjectTests::User.find("test").should be_a(ObjectTests::User)
-	end
-	
 	it "can be created" do
 		obj = ObjectTests::User.new
 	end
@@ -54,15 +38,28 @@ describe RedisObject do
 		obj.should_not be_nil
 	end
 	
+	it "can recollect objects" do
+		ObjectTests::User.recollect!
+	end
+	
+	it "get get the first object (random)" do
+		obj = ObjectTests::User.first
+		obj.should be_a(ObjectTests::User)
+	end
+	
 	it "should save stuff" do
 		obj = ObjectTests::User.find("test")
 		obj.stuff = "yay!"
-		obj.stuff.should == "yay!"
+		obj[:stuff].should eq("yay!")
+		obj[:stuff] = "yayyay!"
+		obj.stuff.should eq("yayyay!")
+		obj.stuff = "yay!"
+		obj.stuff.should eq("yay!")
 	end
 	
 	it "should retrieve stuff" do
 		obj = ObjectTests::User.find("test")
-		obj.stuff.should == "yay!"
+		obj.stuff.should eq("yay!")
 	end
 	
 	it "can collect other objects" do

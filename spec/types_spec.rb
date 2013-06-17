@@ -21,6 +21,8 @@ module TypeSpec
 		end
 	end
 	
+	class TypedChild < TypedObject; end
+	
 	describe Seabright::Types do
 		before do
 			RedisObject.store.flushdb
@@ -29,6 +31,16 @@ module TypeSpec
 		it "can be created via data packet" do
 			
 			obj = TypedObject.create(TestData)
+			
+			TestData.each do |k,v|
+				obj.get(k).should eq(v)
+			end
+			
+		end
+		
+		it "inherits types" do
+			
+			obj = TypedChild.create(TestData)
 			
 			TestData.each do |k,v|
 				obj.get(k).should eq(v)
@@ -79,7 +91,10 @@ module TypeSpec
 		
 		it "describes itself" do
 			
-			puts TypedObject.describe
+			obj = TypedObject.create(TestData)
+			objc = TypedChild.create(TestData)
+			
+			desc = TypedObject.describe
 			TypedObject.dump_schema(File.open("/tmp/redisobject_dump_test","w"))
 			
 		end

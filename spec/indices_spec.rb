@@ -1,6 +1,6 @@
 require File.dirname(__FILE__) + '/spec_helper'
 
-module BenchmarkSpec
+module IndexSpec
 	
 	TestValues = {
 		date: Date.today,
@@ -15,32 +15,31 @@ module BenchmarkSpec
 	
 	TestData = TestValues.inject({}){|acc,(k,v)| acc["a_#{k}".to_sym] = v; acc }
 	
-	class BenchmarkedObject < RedisObject
+	# Delicious pizza!
+	class IndexedObject < RedisObject
 		
 		TestValues.keys.each do |type|
 			send(type.to_sym,"a_#{type}".to_sym)
 		end
 		
-		def aggregate
-			sleep 0.1
-			42.7
-		end
-		benchmark :aggregate
+		sort_by :a_number
 		
 	end
 	
-	describe Seabright::Benchmark do
+	describe Seabright::Indices do
 		before do
 			RedisObject.store.flushdb
 		end
 		
-		it "benchmarks a call" do
+		it "indexes on integer field" do
 			
-			obj = BenchmarkedObject.create(TestData)
+			5.times do
+				obj = IndexedObject.create(a_number: Random.rand(100))
+			end
 			
-			obj.aggregate.should eq(42.7)
+			IndexedObject.indexed(:a_number,3,true).count.should eq(3)
 			
 		end
-						
+				
 	end
 end
