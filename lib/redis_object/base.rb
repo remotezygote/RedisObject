@@ -10,9 +10,6 @@ module Seabright
 					mset(ident.dup)
 				end
 			end
-			# if self.class.load_hash_on_init?
-			# 	load_all_hash_values
-			# end
 			self
 		end
 		
@@ -198,14 +195,6 @@ module Seabright
 			
 			def reserve(k)
 				store.set(reserve_key(k),Time.now.to_s)
-			end
-			
-			def load_hash_on_init!
-				@load_hash_on_init = true
-			end
-			
-			def load_hash_on_init?
-				@load_hash_on_init ||= true
 			end
 			
 			def new_id(complexity = 8)

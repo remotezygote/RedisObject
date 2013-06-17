@@ -43,7 +43,7 @@ module RenameClassSpec
 			end
 
 			Topping.indexed(:created_at).first.should_not be_nil
-			Topping.indexed(:created_at).count.should == 6
+			Topping.indexed(:created_at).count.should == 5
 			
 			[margherita, marinara].each do |pizza|
 				pizza.pizza_toppings.should be_nil
@@ -90,7 +90,7 @@ module RenameClassSpec
 			marinara.pizza_toppings.should include(garlic.hkey)
 
 			PizzaTopping.indexed(:created_at).first.should_not be_nil
-			PizzaTopping.indexed(:created_at).count.should == 6
+			PizzaTopping.indexed(:created_at).count.should == 5
 		end
 	end
 end
