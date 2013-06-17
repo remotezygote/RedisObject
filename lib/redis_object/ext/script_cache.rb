@@ -60,7 +60,7 @@ module Seabright
 			end
 			
 			def untrack_script(name)
-				ScriptSHAMap.delete name
+				$ScriptSHAMap.delete name
 				(@tmp_store || store).del(script_sha_key(name))
 			end
 			
@@ -75,6 +75,7 @@ module Seabright
 				store_obj.keys(script_sha_key("*")).each do |k|
 					store_obj.del k
 				end
+				$ScriptSHAMap = {}
 			end
 			
 			def script_sha_key(name)

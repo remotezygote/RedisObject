@@ -4,10 +4,6 @@ module TriggerSpec
 	
 	class TimestampedObject < RedisObject;end
 	
-	class UnTimestampedObject < RedisObject
-		# time_matters_not!
-	end
-	
 	describe Seabright::Triggers do
 		before do
 			RedisObject.store.flushdb
