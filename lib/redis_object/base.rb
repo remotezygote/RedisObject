@@ -72,7 +72,9 @@ module Seabright
 		
 		def get(k)
 			cached_hash_values[k.to_s] ||= Proc.new {|key|
-				if v = store.hget(hkey, key.to_s)
+				if is_ref_key?(k) && (v = get_reference(store.hget(hkey, key.to_s)))
+					define_setter_getter(key)
+				elsif v = store.hget(hkey, key.to_s)
 					define_setter_getter(key)
 				end
 				v
@@ -111,10 +113,38 @@ module Seabright
 		end
 		
 		def set(k,v)
+			return set_ref(k,v) if v.is_a?(RedisObject)
 			store.hset(hkey, k.to_s, v.to_s)
 			cached_hash_values[k.to_s] = v
 			define_setter_getter(k)
 			v
+		end
+		
+		def set_ref(k,v)
+			return unless v.is_a?(RedisObject)
+			track_ref_key(k)
+			store.hset(hkey, k.to_s, v.hkey)
+			cached_hash_values[k.to_s] = v
+			define_setter_getter(k)
+			v
+		end
+		
+		def track_ref_key(k)
+			store.sadd(ref_field_key, k.to_s)
+		end
+		
+		def is_ref_key?(k)
+			if store.sismember(ref_field_key,k.to_s)
+				return true
+			end
+			false
+		end
+		
+		def get_reference(hkey)
+			if o = RedisObject.find_by_key(hkey)
+				return o
+			end
+			nil
 		end
 		
 		def setnx(k,v)
