@@ -5,12 +5,12 @@ RedisObject is a fast and simple-to-use object persistence layer for Ruby.
 [![Coverage Status](https://coveralls.io/repos/remotezygote/RedisObject/badge.png?branch=master)](https://coveralls.io/r/remotezygote/RedisObject?branch=master)
 
 ## Prerequisites
-You'll need [Redis](http://redis.io). Other storage adapters are in the works.
+You'll need [Redis](http://redis.io). Other storage adapters are in the works. Maybe.
 
 
 ## Installation
 
-	sudo gem install redis_object
+	gem install redis_object
 
 Or, you can add it to your Gemfile:
 
@@ -167,6 +167,9 @@ end
 ```
 
 Accessing indexed items always returns an Enumerator, so first/last/each/count/etc. are usable anywhere and will access objects only when iterated.
+
+## Named Views
+`TODO: Add some damn View documentation.`
 
 ## Links
 Redis: [http://redis.io](http://redis.io)  
