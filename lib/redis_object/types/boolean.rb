@@ -16,6 +16,7 @@ module Seabright
 			
 		end
 		
+		register_type :Boolean
 		alias_type :Bool, :Boolean
 		
 	end

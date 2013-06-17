@@ -12,6 +12,7 @@ module Seabright
 			
 		end
 		
+		register_type :Number
 		alias_type :Int, :Number
 		
 	end

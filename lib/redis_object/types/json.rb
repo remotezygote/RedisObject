@@ -11,5 +11,8 @@ module Seabright
 			end
 			
 		end
+		
+		register_type :Json
+		
 	end
 end

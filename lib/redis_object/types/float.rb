@@ -8,5 +8,8 @@ module Seabright
 			alias_method :score_float, :format_float
 			
 		end
+		
+		register_type :Float
+		
 	end
 end

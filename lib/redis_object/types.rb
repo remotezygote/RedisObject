@@ -9,38 +9,50 @@ module Seabright
 			@type_aliases ||= {}
 		end
 		
-		def enforce_format(k,v)
-			if v && (fmt = self.class.field_formats[k.to_sym]) && (sym = "format_#{fmt}".to_sym) && respond_to?(sym)
-				send(sym,v)
-			else 
-				v
+		def self.register_type(sym)
+			known_types << sym.to_s.downcase.to_sym
+		end
+		
+		def self.known_types
+			@known_types ||= []
+		end
+		
+		def type_filter_for(prefix,k)
+			if (fmt = self.class.field_formats[k.to_sym]) && (sym = "#{prefix}_#{fmt}".to_sym) && respond_to?(sym)
+				return sym
 			end
+			nil
+		end
+		
+		def enforce_format(k,v)
+			if sym = type_filter_for(:format,k)
+				return send(sym,v)
+			end
+			v
 		end
 		
 		def score_format(k,v)
-			if v && (fmt = self.class.field_formats[k.to_sym]) && (sym = "score_#{fmt}".to_sym) && respond_to?(sym)
-				send(sym,v)
-			else 
-				0
+			if sym = type_filter_for(:score,k)
+				return send(sym,v)
 			end
+			0
 		end
 		
 		def save_format(k,v)
-			if v && (fmt = self.class.field_formats[k.to_s.gsub(/\=$/,'').to_sym]) && (sym = "save_#{fmt}".to_sym) && respond_to?(sym)
-				send(sym,v)
-			else 
-				v
+			if sym = type_filter_for(:save,k)
+				return send(sym,v)
 			end
+			v
 		end
 		
 		module ClassMethods
 			
 			def method_missing(sym,*args,&block)
-				if als = Seabright::Types.type_aliases[sym]
+				if als = Types.type_aliases[sym]
 					org = sym
 					sym = als
 				end
-				if known_types.include?(sym)
+				if Types.known_types.include?(sym)
 					register_type(sym,org)
 					send(sym,*args,&block)
 				else
@@ -50,27 +62,20 @@ module Seabright
 			
 			def register_type(sym,als=nil)
 				sym = sym.to_sym
-				unless self.respond_to?(sym)
-					require "redis_object/types/#{sym}" unless Seabright::Types.const_defined?("#{sym.to_s.capitalize}Type".to_sym)
-					include Seabright::Types.const_get("#{sym.to_s.capitalize}Type".to_sym)
-					metaclass = class << self; self; end
-					metaclass.class_eval do
-						define_method(sym) do |k|
+				return if self.respond_to?(sym)
+				self.send(:include,Types.const_get("#{sym.to_s.capitalize}Type".to_sym))
+				metaclass = class << self; self; end
+				metaclass.class_eval do
+					define_method(sym) do |k|
+						set_field_format k, sym
+					end
+					if als
+						als = als.to_sym
+						define_method(als) do |k|
 							set_field_format k, sym
 						end
-						if als
-							als = als.to_sym
-							define_method(als) do |k|
-								set_field_format k, sym
-							end
-						end
 					end
-					return true
 				end
-			end
-			
-			def known_types
-				@known_types ||= [:array,:boolean,:date,:float,:json,:number]
 			end
 			
 			def field_formats
@@ -179,9 +184,9 @@ module Seabright
 		
 	end
 end
-# require "redis_object/types/array"
+require "redis_object/types/array"
 require "redis_object/types/boolean"
-# require "redis_object/types/date"
-# require "redis_object/types/float"
-# require "redis_object/types/json"
+require "redis_object/types/date"
+require "redis_object/types/float"
+require "redis_object/types/json"
 require "redis_object/types/number"

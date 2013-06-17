@@ -16,5 +16,8 @@ module Seabright
 			end
 			
 		end
+		
+		register_type :Date
+		
 	end
 end
