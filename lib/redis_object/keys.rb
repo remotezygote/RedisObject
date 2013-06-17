@@ -13,6 +13,10 @@ module Seabright
 			"#{key}_h"
 		end
 		
+		def ref_field_key(ident = nil)
+			"#{key}_ref_fields"
+		end
+		
 		module ClassMethods
 			
 			def key(ident=nil)
@@ -25,6 +29,10 @@ module Seabright
 			
 			def hkey(ident = nil)
 				"#{key(ident)}_h"
+			end
+			
+			def ref_field_key(ident = nil)
+				"#{key(ident)}_ref_fields"
 			end
 			
 		end
