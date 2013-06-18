@@ -10,28 +10,30 @@ module Seabright
 			def intercept_sets_for_indices!
 				return if @intercepted_sets_for_indices
 				self.class_eval do
-					alias_method :unindexed_set, :set unless method_defined?(:unindexed_set)
-					def set(k,v)
-						ret = unindexed_set(k,v)
+					
+					def indexed_set_method(meth,k,v)
+						ret = send("unindexed_#{meth}".to_sym,k,v)
 						if self.class.has_sort_index?(k)
 							store.zrem(index_key(k), hkey)
 							store.zadd(index_key(k), score_format(k,v), hkey)
 						end
 						ret
 					end
+					
+					alias_method :unindexed_set, :set unless method_defined?(:unindexed_set)
+					def set(k,v)
+						indexed_set_method(:set,k,v)
+					end
+					
+					alias_method :unindexed_setnx, :setnx unless method_defined?(:unindexed_setnx)
+					def setnx(k,v)
+						indexed_set_method(:setnx,k,v)
+					end
+					
 					alias_method :unindexed_mset, :mset unless method_defined?(:unindexed_mset)
 					def mset(dat)
 						ret = unindexed_mset(dat)
 						dat.select {|k,v| self.class.has_sort_index?(k) }.each do |k,v|
-							store.zrem(index_key(k), hkey)
-							store.zadd(index_key(k), score_format(k,v), hkey)
-						end
-						ret
-					end
-					alias_method :unindexed_setnx, :setnx unless method_defined?(:unindexed_setnx)
-					def setnx(k,v)
-						ret = unindexed_setnx(k,v)
-						if self.class.has_sort_index?(k)
 							store.zrem(index_key(k), hkey)
 							store.zadd(index_key(k), score_format(k,v), hkey)
 						end

@@ -7,12 +7,8 @@ module Seabright
 				puts "[Storage::Redis] #{sym}(#{args.inspect.gsub(/\[|\]/m,'')})" if Debug.verbose?
 				begin
 					connection.send(sym,*args, &block)
-				rescue ::Redis::InheritedError => err
+				rescue ::Redis::InheritedError, ::Redis::TimeoutError => err
 					puts "Rescued: #{err.inspect}" if DEBUG
-					reset
-					connection.send(sym,*args, &block)
-				rescue ::Redis::TimeoutError => err
-					puts "Rescued connection timeout: #{err.inspect}" if DEBUG
 					reset
 					connection.send(sym,*args, &block)
 				end

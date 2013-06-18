@@ -71,14 +71,16 @@ module Seabright
 		alias_method :actual, :raw
 		
 		def get(k)
-			cached_hash_values[k.to_s] ||= Proc.new {|key|
-				if is_ref_key?(k) && (v = get_reference(store.hget(hkey, key.to_s)))
-					define_setter_getter(key)
-				elsif v = store.hget(hkey, key.to_s)
-					define_setter_getter(key)
-				end
-				v
-			}.call(k)
+			cached_hash_values[k.to_s] ||= _get(k)
+		end
+		
+		def _get(k)
+			if is_ref_key?(k) && (v = get_reference(store.hget(hkey, k.to_s)))
+				define_setter_getter(k)
+			elsif v = store.hget(hkey, k.to_s)
+				define_setter_getter(k)
+			end
+			v
 		end
 		
 		def [](k)
