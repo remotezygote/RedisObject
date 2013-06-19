@@ -1,8 +1,10 @@
 source "http://rubygems.org"
 
-gem 'rake'
-gem 'rspec'
-gem 'coveralls', require: false
+group :test do
+	gem 'rake'
+	gem 'rspec'
+	gem 'coveralls', require: false
+end
 
 # Specify your gem's dependencies in redis_object.gemspec
 gemspec
