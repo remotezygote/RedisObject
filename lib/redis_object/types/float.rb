@@ -3,7 +3,7 @@ module Seabright
 		module FloatType
 			
 			def format_float(val)
-				Float(val)
+				val ? Float(val) : nil
 			end
 			alias_method :score_float, :format_float
 			

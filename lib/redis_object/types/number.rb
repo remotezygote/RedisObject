@@ -3,11 +3,11 @@ module Seabright
 		module NumberType
 			
 			def format_number(val)
-				val.to_i
+				val ? val.to_i : nil
 			end
 			
 			def score_number(val)
-				Float(val)
+				Float(val || 0.0)
 			end
 			
 		end

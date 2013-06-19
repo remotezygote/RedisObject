@@ -3,7 +3,7 @@ module Seabright
 		module JsonType
 			
 			def format_json(val)
-				Yajl::Parser.new(:symbolize_keys => true).parse(val || "")
+				val ? Yajl::Parser.new(:symbolize_keys => true).parse(val) : nil
 			end
 			
 			def save_json(val)

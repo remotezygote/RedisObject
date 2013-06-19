@@ -16,9 +16,9 @@ module TypeSpec
 	TestData = TestValues.inject({}){|acc,(k,v)| acc["a_#{k}".to_sym] = v; acc }
 	
 	class TypedObject < RedisObject
-		json :another_json
 		TestValues.keys.each do |type|
 			send(type.to_sym,"a_#{type}".to_sym)
+			send(type.to_sym,"another_#{type}".to_sym)
 		end
 	end
 	
@@ -90,11 +90,19 @@ module TypeSpec
 			
 		end
 		
-		it "can get unset json field" do
+		it "can get unset typed fields" do
 			
 			obj = TypedObject.new
 			
 			obj.another_json.should eq(nil)
+			obj.another_array.should be_a(Array)
+			obj.another_array.size.should eq(0)
+			obj.another_date.should eq(nil)
+			obj.another_int.should eq(nil)
+			obj.another_number.should eq(nil)
+			obj.another_float.should eq(nil)
+			obj.another_bool.should eq(false)
+			obj.another_boolean.should eq(false)
 			
 		end
 		
