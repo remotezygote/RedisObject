@@ -33,12 +33,12 @@ module Seabright
 		include Seabright::Types
 		include Seabright::DefaultValues
 		include Seabright::Collections
+		include Seabright::Triggers
 		include Seabright::Indices
 		include Seabright::Views
 		include Seabright::ViewCaching
 		include Seabright::Timestamps
 		include Seabright::History
-		include Seabright::Triggers
 		include Seabright::Benchmark
 		
 	end

@@ -177,10 +177,10 @@ module Seabright
 			super if sym == :class
 			if sym.to_s =~ SetPattern
 				return super if args.size > 1
-				set(sym.to_s.gsub(SetPattern,'').to_sym,*args)
+				send(:set,sym.to_s.gsub(SetPattern,'').to_sym,*args)
 			else
 				return super if !args.empty?
-				get(sym)
+				send(:get,sym)
 			end
 		end
 		

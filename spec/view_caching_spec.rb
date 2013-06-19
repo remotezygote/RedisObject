@@ -34,7 +34,7 @@ module ViewCachingSpec
 	
 	class Container < RedisObject
 		
-		invalidate_downstream :TypedObject
+		invalidate_downstream :typed_objects
 		
 	end
 	
@@ -96,9 +96,9 @@ module ViewCachingSpec
 			@obj.view_is_cached?(:aggregated).should eq(true)
 			
 			@obj.set(:demolisher, "smash")
-			# 
-			# @obj.view_is_cached?(:aggregated).should eq(false)
+			sleep 1
 			
+			@obj.view_is_cached?(:aggregated).should eq(false)
 			
 		end
 				
@@ -109,20 +109,18 @@ module ViewCachingSpec
 			@obj.view_is_cached?(:aggregated).should eq(true)
 			
 			@baby.set(:demolisher, "smash")
+			sleep 1
 			
-			# sleep 1
-			# 
-			# TypedObject.find(@obj.id).view_is_cached?(:aggregated).should eq(false)
+			TypedObject.find(@obj.id).view_is_cached?(:aggregated).should eq(false)
 			
 			@obj.view_as_hash(:aggregated).should be_a(Hash)
 			
 			@obj.view_is_cached?(:aggregated).should eq(true)
 			
 			@dad.set(:demolisher, "smash")
+			sleep 1
 			
-			# sleep 1
-			# 
-			# TypedObject.find(@obj.id).view_is_cached?(:aggregated).should eq(false)
+			TypedObject.find(@obj.id).view_is_cached?(:aggregated).should eq(false)
 			
 		end
 				

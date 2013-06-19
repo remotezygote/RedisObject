@@ -34,8 +34,6 @@ module Seabright
 			
 			def cache_view(name,opts=true)
 				cached_views[name.to_sym] = opts
-				intercept_views_for_caching!
-				set_up_invalidation!
 			end
 			alias_method :cache_named_view, :cache_view
 			
@@ -175,7 +173,27 @@ module Seabright
 						end
 					end
 					
-					trigger_on_update :invalidated_by_update!
+					def invalidated_by(obj,chain)
+						invalidate_cached_views!
+					end
+					
+					def invalidated_set(cmd,k,v)
+						ret = send("uninvalidated_#{cmd}".to_sym,k,v)
+						invalidated_by_update!
+						ret
+					end
+					
+					alias_method :uninvalidated_set, :set unless method_defined?(:uninvalidated_set)
+					def set(k,v)
+						invalidated_set(:set,k,v)
+					end
+					
+					alias_method :uninvalidated_setnx, :setnx unless method_defined?(:uninvalidated_setnx)
+					def setnx(k,v)
+						invalidated_set(:setnx,k,v)
+					end
+					
+					# trigger_on_update :invalidated_by_update!
 					trigger_on_reference :invalidated_by_reference!
 					
 				end
@@ -202,7 +220,6 @@ module Seabright
 			
 			def invalidate_upstream(*args)
 				@upstream_invalidations = (@upstream_invalidations || []) + args
-				set_up_invalidation!
 			end
 			
 			def upstream_invalidations
@@ -219,7 +236,6 @@ module Seabright
 			
 			def invalidate_downstream(*args)
 				@downstream_invalidations = (@downstream_invalidations || []) + args
-				set_up_invalidation!
 			end
 			
 			def downstream_invalidations
@@ -252,6 +268,8 @@ module Seabright
 		
 		def self.included(base)
 			base.extend(ClassMethods)
+			base.intercept_views_for_caching!
+			base.set_up_invalidation!
 		end
 		
 	end

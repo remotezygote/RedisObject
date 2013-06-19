@@ -26,9 +26,9 @@ module ScriptCacheSpec
 			GenericObject.recently_created.first.id.should eq("5")
 			GenericObject.indexed(:created_at,-1,false).to_a.last.id.should eq("4")
 			
-			$ScriptSHAMap.keys.count.should eq(1)
+			cnt = $ScriptSHAMap.keys.count
 			RedisObject.untrack_script :RevScript
-			$ScriptSHAMap.keys.count.should eq(0)
+			$ScriptSHAMap.keys.count.should eq(cnt-1)
 			
 		end
 		
