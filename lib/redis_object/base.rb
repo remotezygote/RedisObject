@@ -25,9 +25,10 @@ module Seabright
 			self.class.reserve(k)
 		end
 		
-		def to_json
-			Yajl::Encoder.encode(actual)
-		end
+		# oved this to the dumper module in experimental - remove when it gets to base
+		# def to_json
+		# 	Yajl::Encoder.encode(actual)
+		# end
 		
 		def id
 			@id || get(id_sym) || set(id_sym, generate_id)
@@ -188,14 +189,15 @@ module Seabright
 			"#{cls.split('::').last.downcase}_id".to_sym
 		end
 		
-		def load_all_hash_values
-			@cached_hash_values = store.hgetall(hkey)
-			cached_hash_values.keys.dup.each do |key|
-				next if key == "class"
-				define_setter_getter(key)
-			end
-		end
-		
+		# Not used yet...
+		# def load_all_hash_values
+		# 	@cached_hash_values = store.hgetall(hkey)
+		# 	cached_hash_values.keys.dup.each do |key|
+		# 		next if key == "class"
+		# 		define_setter_getter(key)
+		# 	end
+		# end
+		# 
 		def cached_hash_values
 			@cached_hash_values ||= {}
 		end
