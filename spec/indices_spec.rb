@@ -38,6 +38,9 @@ module IndexSpec
 			end
 			
 			IndexedObject.indexed(:a_number,3,true).count.should eq(3)
+			IndexedObject.indexed(:a_number,3,true) do |o|
+				o.should be_a(IndexedObject)
+			end
 			
 		end
 				

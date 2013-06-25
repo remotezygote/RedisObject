@@ -19,7 +19,7 @@ module CollectionSpec
 			GrandDad << @dad
 			@granddad << @dad
 			@granddad << @son
-			@dad << @son
+			@dad.push @son
 			@dad.push @sonny
 			@son.reference @grandson
 			
@@ -30,6 +30,7 @@ module CollectionSpec
 			@granddad.daddies.count.should eq(1)
 			@granddad.sons.count.should eq(1)
 			@dad.sons.count.should eq(2)
+			@dad.sons.push Son.create
 			
 		end
 		
@@ -61,6 +62,10 @@ module CollectionSpec
 			
 			@dad = Daddy.find("dad")
 			@dad.sons.find(son_id: "sonny").first.should be_a(Son)
+			@dad.sons[0].should be_a(Son)
+			@dad.sons.first.should be_a(Son)
+			@dad.sons.last.should be_a(Son)
+			@dad.sons.objects.first.should be_a(Son)
 			
 		end
 		
@@ -113,6 +118,22 @@ module CollectionSpec
 			
 		end
 		
+		it "can delete a collection another way" do
+			
+			@dad.remove_collection! :sons
+			@dad.collections.keys.should_not include(:sons)
+			@son.remove_collection!(:grand_sons)
+			@son.collections.keys.should_not include(:grand_sons)
+			
+		end
+		
+		it "can select a block of objects" do
+			
+			i = @dad.sons.last.id
+			@dad.sons.select {|o| o.id == i }.count.should > 0
+			
+		end
+		
 		it "retrieves via index" do
 			
 			5.times do
@@ -136,6 +157,17 @@ module CollectionSpec
 			Daddy.get(:son).should be_a(Son)
 			Daddy.delete_child(Daddy.get(:son))
 			Daddy.get(:sons).count.should eq(4)
+			# Daddy.get(:sons).indexed(:created_at,3,true).count.should eq(3)
+			
+		end
+		
+		it "can remove a collection from a class itself" do
+			
+			5.times do
+				Daddy.push Son.create
+			end
+			
+			Daddy.remove_collection! :sons
 			# Daddy.get(:sons).indexed(:created_at,3,true).count.should eq(3)
 			
 		end
