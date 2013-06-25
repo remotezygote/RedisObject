@@ -127,6 +127,13 @@ module Seabright
 			v
 		end
 		
+		def collect_type_by_key(col,*keys)
+			collect = get_collection(col)
+			keys.each do |k|
+				collect << k
+			end
+		end
+		
 		module ClassMethods
 			
 			def hkey_col(ident = nil)

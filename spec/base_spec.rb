@@ -87,4 +87,16 @@ describe RedisObject do
 		ObjectTests::User.find("test").should be_nil
 	end
 	
+	it "can dump itself raw-ly" do
+		obj = ObjectTests::User.create("testy")
+		obj.test = true
+		obj.raw.should be_a(Hash)
+	end
+	
+	it "can iterate through instances with each" do
+		ObjectTests::User.each do |obj|
+			obj.should be_a(ObjectTests::User)
+		end
+	end
+	
 end

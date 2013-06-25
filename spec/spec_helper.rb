@@ -14,8 +14,12 @@ SimpleCov.formatter = SimpleCov::Formatter::MultiFormatter[
 ]
 SimpleCov.start do
 	add_filter "_spec.rb"
-	add_filter "/experimental/"
+	# add_filter "/experimental/"
 	add_group "Extensions", "lib/redis_object/ext/"
+	add_group "Experimental", "lib/redis_object/experimental/" do |fl|
+		!/_untested/.match(fl)
+	end
+	maximum_coverage_drop 5
 end
 
 require 'redis_object'

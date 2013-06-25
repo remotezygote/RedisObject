@@ -14,7 +14,7 @@ require "redis_object/defaults"
 require "redis_object/collection"
 require "redis_object/indices"
 require "redis_object/timestamps"
-require "redis_object/experimental/history"
+require "redis_object/experimental/dumping"
 require "redis_object/ext/views"
 require "redis_object/ext/view_caching"
 require "redis_object/ext/triggers"
@@ -38,8 +38,8 @@ module Seabright
 		include Seabright::Views
 		include Seabright::ViewCaching
 		include Seabright::Timestamps
-		include Seabright::History
 		include Seabright::Benchmark
+		include Seabright::Dumping
 		
 	end
 end
