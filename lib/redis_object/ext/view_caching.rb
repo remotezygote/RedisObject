@@ -119,11 +119,15 @@ module Seabright
 						invalidate_cached_views(*self.class.cached_views.map {|name,opts| name })
 					end
 					
+					def invalidations(stream)
+						self.class.send("#{stream}stream_invalidations".to_sym)
+					end
+					
 					def invalidate_downstream!
-						return unless self.class.downstream_invalidations && (self.class.downstream_invalidations.size > 0)
-						puts "Invalidating downstream: #{self.class.downstream_invalidations.inspect}" if Debug.verbose?
-						self.class.downstream_invalidations.each do |col|
-							if has_collection?(col) && (colctn = get_collection(col))
+						return unless invalidations(:down).size > 0
+						puts "Invalidating downstream: #{invalidations(:down).inspect}" if Debug.verbose?
+						invalidations(:down).each do |col|
+							if has_collection?(col) and (colctn = get_collection(col))
 								colctn.each do |obj|
 									obj.invalidated_by_other(self,invalidation_chain + [self.hkey])
 								end
@@ -132,11 +136,12 @@ module Seabright
 					end
 					
 					def invalidate_upstream!
-						return unless self.class.upstream_invalidations && (self.class.upstream_invalidations.size > 0)
-						puts "Invalidating upstream: #{self.class.upstream_invalidations.inspect}" if Debug.verbose?
+						return unless invalidations(:up).size > 0
+						puts "Invalidating upstream: #{invalidations(:up).inspect}" if Debug.verbose?
 						backreferences.each do |obj|
-							next unless self.class.upstream_invalidations.include?(obj.class.name.split("::").last.to_sym) #|| self.class.invalidate_everything_upstream?
-							obj.invalidated_by_other(self,invalidation_chain + [self.hkey]) if obj.respond_to?(:invalidated_by_other)
+							if invalidations(:up).include?(obj.class) and obj.respond_to?(:invalidated_by_other)
+								obj.invalidated_by_other(self,invalidation_chain + [self.hkey])
+							end
 						end
 					end
 					
@@ -163,14 +168,15 @@ module Seabright
 					end
 					
 					def invalidated_by_other(obj,chain)
-						unless chain.include?(self.hkey)
-							puts "#{self.class.name}:#{self.id}'s view caches were invalidated by upstream object: #{obj.class.name}:#{obj.id} (chain:#{chain.inspect})" if Debug.verbose?
-							@invalidation_chain = chain
-							[:invalidated_by,"invalidated_by_#{obj.class.name.underscore}".to_sym].each do |meth_sym|
-								send(meth_sym,obj,chain) if respond_to?(meth_sym)
+						return if chain.include?(self.hkey)
+						puts "#{self.class.name}:#{self.id}'s view caches were invalidated by upstream object: #{obj.class.name}:#{obj.id} (chain:#{chain.inspect})" if Debug.verbose?
+						@invalidation_chain = chain
+						[:invalidated_by,"invalidated_by_#{obj.class.name.underscore}".to_sym].each do |meth_sym|
+							if respond_to?(meth_sym)
+								send(meth_sym,obj,chain)
 							end
-							invalidate_up_and_down!
 						end
+						invalidate_up_and_down!
 					end
 					
 					def invalidated_by(obj,chain)
