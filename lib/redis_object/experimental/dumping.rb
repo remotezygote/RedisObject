@@ -1,4 +1,4 @@
-require 'yaml'
+require 'psych'
 
 module Seabright
 	class RedisObject
@@ -13,11 +13,11 @@ module Seabright
 					end
 				end
 			end
-			out.to_yaml
+			Psych.dump(out)
 		end
 		
 		def self.load_dump(str)
-			YAML.load(str).each do |(k,v)|
+			Psych.load(str).each do |(k,v)|
 				if klass = RedisObject.deep_const_get(k)
 					if v[:objects]
 						v[:objects].each do |o|
@@ -76,7 +76,7 @@ module Seabright
 		end
 		
 		def to_yaml
-			full_hash_dump.to_yaml
+			Psych.dump(full_hash_dump)
 		end
 		alias_method :to_yml, :to_yaml
 		
