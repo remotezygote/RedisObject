@@ -1,3 +1,5 @@
+require 'yaml'
+
 module Seabright
 	class RedisObject
 		
@@ -6,13 +8,42 @@ module Seabright
 			ObjectSpace.enum_for(:each_object, class << RedisObject; self; end).each do |cls|
 				unless cls == RedisObject
 					out[cls.name] = {}
-					# cls.dump
 					out[cls.name][:objects] = cls.all.map do |obj|
 						obj.full_hash_dump
 					end
 				end
 			end
 			out.to_yaml
+		end
+		
+		def self.load_dump(str)
+			YAML.load(str).each do |(k,v)|
+				if klass = RedisObject.deep_const_get(k)
+					if v[:objects]
+						v[:objects].each do |o|
+							load_object klass, o
+						end
+					end
+				end
+			end
+		end
+		
+		def self.load_object(klass,pkt)
+			puts "Loading a #{klass.name}: #{pkt.inspect}" if DEBUG
+			cols = nil
+			pkt.delete(:collections).each do |col_name|
+				if objs = pkt.delete(col_name.to_sym)
+					cols ||= {}
+					cols[col_name.to_sym] = objs
+				end
+			end
+			obj = klass.create(pkt)
+			if cols
+				cols.each do |name,objs|
+					puts "  Loading in collected #{name}: #{objs.inspect}" if DEBUG
+					obj.collect_type_by_key name, *objs
+				end
+			end
 		end
 		
 	end
@@ -45,7 +76,6 @@ module Seabright
 		end
 		
 		def to_yaml
-			require 'yaml'
 			full_hash_dump.to_yaml
 		end
 		alias_method :to_yml, :to_yaml

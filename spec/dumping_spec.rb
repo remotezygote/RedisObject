@@ -46,5 +46,15 @@ module DumpingSpec
 			
 		end
 		
+		it "can load back in a dump" do
+			
+			r = RedisObject.dump_everything
+			r.size.should > 100
+			RedisObject.store.flushdb
+			RedisObject.load_dump r
+			DumpableObject.latest.generic_objects.count.should eq(1)
+			
+		end
+		
 	end
 end
