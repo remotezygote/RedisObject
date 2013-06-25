@@ -1,4 +1,5 @@
 require 'psych'
+require 'active_support/core_ext/time/calculations'
 
 module Seabright
 	class RedisObject
