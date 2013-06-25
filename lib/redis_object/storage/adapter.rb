@@ -3,7 +3,7 @@ module Seabright
 		class Adapter
 			
 			def initialize(config={})
-				@config = config
+				configure config
 			end
 			
 			def configure(conf)
@@ -38,7 +38,6 @@ module Seabright
 			end
 			
 			def new_connection
-				true
 			end
 			
 		end

@@ -27,9 +27,12 @@ module Seabright
 				File.open(file,'wb') do |f|
 					keys = connection.send(:keys,"*")
 					f.write keys.map {|k|
-						v = connection.dump(k)
-						v.force_encoding(Encoding::BINARY)
-						[k,v].join(DUMP_SEPARATOR)
+						if v = connection.dump(k)
+							v.force_encoding(Encoding::BINARY)
+							[k,v].join(DUMP_SEPARATOR)
+						else
+							""
+						end
 					}.join(REC_SEPARATOR)
 				end
 			end

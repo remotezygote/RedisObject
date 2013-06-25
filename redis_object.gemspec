@@ -19,8 +19,9 @@ Gem::Specification.new do |s|
   s.executables   = `git ls-files -- bin/*`.split("\n").map{ |f| File.basename(f) }
   s.require_paths = ["lib"]
   s.required_ruby_version = '>= 1.9.2'
-  s.add_dependency "utf8_utils"
-  s.add_dependency "redis"
-  s.add_dependency "yajl-ruby"
-  s.add_dependency "activesupport"
+  s.add_dependency "utf8_utils", ">= 2.0.1"
+  s.add_dependency "redis", ">= 3.0.4"
+  s.add_dependency "yajl-ruby", ">= 1.1.0"
+  s.add_dependency "activesupport", ">= 3.2.13"
+  s.add_dependency "psych", "= 1.3.4"
 end
