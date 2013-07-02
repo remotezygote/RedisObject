@@ -23,5 +23,5 @@ Gem::Specification.new do |s|
   s.add_dependency "redis", ">= 3.0.4"
   s.add_dependency "yajl-ruby", ">= 1.1.0"
   s.add_dependency "activesupport", ">= 3.2.13"
-  s.add_dependency "psych", "= 1.3.4"
+  s.add_dependency "psych", ">= 1.3.4"
 end
