@@ -40,7 +40,7 @@ module ViewCachingSpec
 	
 	class Baby < RedisObject
 		
-		invalidate_upstream :TypedObject
+		invalidate_upstream TypedObject
 		
 	end
 	
