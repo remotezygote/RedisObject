@@ -394,22 +394,18 @@ module Seabright
 			
 			def find_by_key(k)
 				if store.exists(k) && (cls = store.hget(k,:class))
-					return deep_const_get(cls.to_sym).new(store.hget(k,id_sym(cls)))
+					return deep_const_get(cls.to_sym,Object).new(store.hget(k,id_sym(cls)))
 				end
 				nil
 			end
 			
-			def deep_const_get(const)
+			def deep_const_get(const,base=nil)
 				if Symbol === const
 					const = const.to_s
 				else
 					const = const.to_str.dup
 				end
-				if const.sub!(/^::/, '')
-					base = Object
-				else
-					base = self
-				end
+				base ||= const.sub!(/^::/, '') ? Object : self
 				const.split(/::/).inject(base) { |mod, name| mod.const_get(name) }
 			end
 			
