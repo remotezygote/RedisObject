@@ -90,8 +90,8 @@ module Seabright
 					old_key = hget("#{key}_h", :key)
 					hset("#{key}_h", :class, new_name)
 					hset("#{key}_h", :key, old_key.sub(/^#{old_name}/, new_name))
-					hset("#{key}_h", RedisObject.id_sym(new_name), key.sub(/^#{old_name}:/,''))
 					hdel("#{key}_h", RedisObject.id_sym(old_name))
+					hset("#{key}_h", RedisObject.id_sym(new_name), key.sub(/^#{old_name}:/,''))
 				end
 				del(old_name.pluralize)
 
