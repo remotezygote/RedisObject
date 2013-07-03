@@ -88,10 +88,10 @@ module Seabright
 					sadd(new_name.pluralize, key.sub(/^#{old_name}/, new_name))
 					old_class = hget("#{key}_h", :class)
 					old_key = hget("#{key}_h", :key)
-					hset("#{key}_h", :class, old_class.sub(/#{old_name}$/, new_name))
+					hset("#{key}_h", :class, new_name)
 					hset("#{key}_h", :key, old_key.sub(/^#{old_name}/, new_name))
-					hset("#{key}_h", "#{new_name.downcase}_id", key.sub(/^#{old_name}:/,''))
-					hdel("#{key}_h", "#{old_name.downcase}_id")
+					hset("#{key}_h", RedisObject.id_sym(new_name), key.sub(/^#{old_name}:/,''))
+					hdel("#{key}_h", RedisObject.id_sym(old_name))
 				end
 				del(old_name.pluralize)
 
