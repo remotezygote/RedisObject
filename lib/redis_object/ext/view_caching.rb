@@ -139,6 +139,7 @@ module Seabright
 						return unless invalidations(:up).size > 0
 						puts "Invalidating upstream: #{invalidations(:up).inspect}" if Debug.verbose?
 						backreferences.each do |obj|
+							obj = Object.const_get(obj) if obj.is_a?(String) or obj.is_a?(Symbol)
 							if invalidations(:up).include?(obj.class) and obj.respond_to?(:invalidated_by_other)
 								obj.invalidated_by_other(self,invalidation_chain + [self.hkey])
 							end
@@ -250,7 +251,7 @@ module Seabright
 					when RedisObject
 						name.collection_name
 					when String, Symbol
-						name.to_s.pluralize == name.to_s ? name.to_sym : name.to_s.pluralize.to_sym
+						name.to_s.pluralize.underscore.to_sym
 					else
 						name
 					end
