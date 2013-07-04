@@ -38,6 +38,12 @@ module ViewCachingSpec
 		
 	end
 	
+	class OtherContainer < RedisObject
+		
+		invalidate_downstream TypedObject
+		
+	end
+	
 	class Baby < RedisObject
 		
 		invalidate_upstream TypedObject

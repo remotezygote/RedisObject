@@ -10,7 +10,7 @@
 #   invalidate_upstream Property, Application, PaymentRequest, PaymentResponse
 # 
 # Notify some objects in my collections when I am updated: (objects in these collections)
-#   invalidate_downstream :properties, :applications, :payment_requests, :payment_responses
+#   invalidate_downstream Property, Application, PaymentRequest, PaymentResponse
 # 
 # You can also set up hooks for when this object is updated by certain types of objects by defining the following:
 #   def invalidated_by(obj,chain)
@@ -241,7 +241,20 @@ module Seabright
 			# end
 			
 			def invalidate_downstream(*args)
-				@downstream_invalidations = (@downstream_invalidations || []) + args
+				@downstream_invalidations = (@downstream_invalidations || []) + convert_to_collection_names(args)
+			end
+			
+			def convert_to_collection_names(names)
+				names.map do |name|
+					case name
+					when RedisObject
+						name.collection_name
+					when String, Symbol
+						name.to_s.pluralize == name.to_s ? name.to_sym : name.to_s.pluralize.to_sym
+					else
+						name
+					end
+				end
 			end
 			
 			def downstream_invalidations

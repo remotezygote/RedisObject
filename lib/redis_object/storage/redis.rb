@@ -49,13 +49,13 @@ module Seabright
 					end
 				end
 			end
-
+			
 			def rename_class old_name, new_name
 				old_name = old_name.to_s#.split('::').last
 				new_name = new_name.to_s#.split('::').last
 				old_collection_name = old_name.split('::').last.underscore.pluralize
 				new_collection_name = new_name.split('::').last.underscore.pluralize
-
+				
 				# references to type in collection data
 				keys("#{old_name}:*:backreferences").each do |backref_key|
 					smembers(backref_key).each do |hashref|
@@ -70,7 +70,7 @@ module Seabright
 							zadd(new_collection, score, key.sub(/^#{old_name}/, new_name))
 						end
 						del(old_collection)
-
+						
 						# this updates the lists of collection names
 						collection_names = "#{hashref}:collections"
 						smembers(collection_names).each do |collection_name|
@@ -82,7 +82,7 @@ module Seabright
 					end
 					rename(backref_key, backref_key.sub(/^#{old_name}/, new_name))
 				end
-
+				
 				# type-wide id index
 				smembers(old_name.pluralize).each do |key|
 					sadd(new_name.pluralize, key.sub(/^#{old_name}/, new_name))
@@ -94,7 +94,7 @@ module Seabright
 					hset("#{key}_h", RedisObject.id_sym(new_name), key.sub(/^#{old_name}:/,''))
 				end
 				del(old_name.pluralize)
-
+				
 				# column indexes
 				keys("#{old_name.pluralize}::*").each do |old_index|
 					new_index = old_index.sub(/^#{old_name.pluralize}/, new_name.pluralize)
@@ -103,7 +103,7 @@ module Seabright
 					end
 					del(old_index)
 				end
-
+				
 				# top-level keys
 				keys("#{old_name}:*").each do |key|
 					rename(key, key.sub(/^#{old_name}/, new_name))
