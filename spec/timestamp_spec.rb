@@ -17,6 +17,7 @@ module TriggerSpec
 			end
 			
 			TimestampedObject.recently_created.first.id.should eq("5")
+			TimestampedObject.recently_updated.first.id.should eq("5")
 						
 		end
 						
