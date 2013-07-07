@@ -1,6 +1,7 @@
 require 'active_support/inflector'
 require 'active_support/core_ext/date_time/conversions'
 require 'yajl'
+require 'set'
 
 require "redis_object/storage"
 
