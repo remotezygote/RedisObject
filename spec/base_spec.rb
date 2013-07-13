@@ -10,6 +10,11 @@ module ObjectTests
 	class Doodad < RedisObject
 		
 	end
+	class Collidor < RedisObject
+		def new_id
+			"totsunique"
+		end
+	end
 end
 
 describe RedisObject do
@@ -35,6 +40,13 @@ describe RedisObject do
 	
 	it "should be found by id" do
 		obj = ObjectTests::User.find("test")
+		obj.should_not be_nil
+	end
+	
+	it "should be found by complex matchers" do
+		obj = ObjectTests::User.find(user_id: "test")
+		obj.should_not be_nil
+		obj = ObjectTests::User.find(user_id: /test/)
 		obj.should_not be_nil
 	end
 	
@@ -97,6 +109,11 @@ describe RedisObject do
 		ObjectTests::User.each do |obj|
 			obj.should be_a(ObjectTests::User)
 		end
+	end
+	
+	it "detects id collisions" do
+		ObjectTests::Collidor.create
+		ObjectTests::Collidor.create
 	end
 	
 end

@@ -93,7 +93,7 @@ module Seabright
 		end
 		
 		def mset(dat)
-			store.hmset(hkey, *(dat.inject([]){|acc,(k,v)| acc + [k,v] }))
+			store.hmset(hkey, *(dat.inject([]){|acc,(k,v)| acc << [k,v] }.flatten))
 			cached_hash_values.merge!(dat)
 			dat.each do |k,v|
 				define_setter_getter(k)
@@ -185,8 +185,8 @@ module Seabright
 			end
 		end
 		
-		def id_sym(cls=self.class.cname)
-			"#{cls.split('::').last.downcase}_id".to_sym
+		def id_sym(cls=nil)
+			self.class.id_sym(cls)
 		end
 		
 		# Not used yet...
@@ -244,8 +244,9 @@ module Seabright
 			end
 			
 			def all
+				kys = store.smembers(plname)
 				Enumerator.new do |y|
-					store.smembers(plname).each do |member|
+					kys.each do |member|
 						if a = find_by_key(hkey(member))
 							y << a
 						else
@@ -341,8 +342,9 @@ module Seabright
 				return out".gsub(/\t/,'').freeze
 			
 			def match(pkt)
+				kys = run_script(pkt.keys.count > 1 ? :MultiMatcher : :Matcher,[plname],pkt.flatten.map{|i| i.is_a?(Regexp) ? convert_regex_to_lua(i) : i.to_s })
 				Enumerator.new do |y|
-					run_script(pkt.keys.count > 1 ? :MultiMatcher : :Matcher,[plname],pkt.flatten.map{|i| i.is_a?(Regexp) ? convert_regex_to_lua(i) : i.to_s }).each do |k|
+					kys.each do |k|
 						y << find(k)
 					end
 				end
@@ -416,7 +418,22 @@ module Seabright
 				true
 			end
 			
-			def id_sym(cls=cname)
+			def id_sym(cls=self.name)
+				(cls || self.name).foreign_key.to_sym
+			end
+			
+			def convert_old_id_syms!
+				ol = _old_id_sym
+				nw = id_sym
+				each do |obj|
+					if obj.is_set?(ol)
+						obj.set(nw,get(ol))
+						obj.unset(ol)
+					end
+				end
+			end
+			
+			def _old_id_sym(cls=self.cname)
 				"#{cls.split('::').last.downcase}_id".to_sym
 			end
 			

@@ -23,6 +23,7 @@ module IndexSpec
 		end
 		
 		sort_by :a_number
+		sort_by :a_bool
 		
 	end
 	
@@ -34,7 +35,7 @@ module IndexSpec
 		it "indexes on integer field" do
 			
 			5.times do
-				obj = IndexedObject.create(a_number: Random.rand(100))
+				obj = IndexedObject.create(a_number: Random.rand(100), a_bool: true)
 			end
 			
 			IndexedObject.indexed(:a_number,3,true).count.should eq(3)
