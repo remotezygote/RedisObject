@@ -236,7 +236,7 @@ module Seabright
 			end
 			
 			def cname
-				self.name
+				name
 			end
 			
 			def plname
@@ -418,7 +418,11 @@ module Seabright
 				true
 			end
 			
-			def id_sym(cls=self.name)
+			def id_sym(cls=nil)
+				_old_id_sym(cls)
+			end
+			
+			def _new_id_sym(cls=self.name)
 				(cls || self.name).foreign_key.to_sym
 			end
 			
@@ -433,8 +437,8 @@ module Seabright
 				end
 			end
 			
-			def _old_id_sym(cls=self.cname)
-				"#{cls.split('::').last.downcase}_id".to_sym
+			def _old_id_sym(cls=self.name)
+				"#{(cls || self.name).split('::').last.downcase}_id".to_sym
 			end
 			
 			def describe

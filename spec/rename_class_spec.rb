@@ -73,7 +73,7 @@ module RenameClassSpec
 			[ mozzarella, basil, tomato, garlic, oregano, olive_oil ].each do |topping|
 				topping.get(:class).should == PizzaTopping.name
 				topping.get(:key).should == "RenameClassSpec::PizzaTopping:#{topping.id}"
-				topping.get(:pizza_topping_id).should == topping.id
+				topping.get(:pizzatopping_id).should == topping.id
 				# topping.get(:topping_id).should == nil
 			end
 
