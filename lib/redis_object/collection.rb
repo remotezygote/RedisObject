@@ -319,12 +319,12 @@ module Seabright
 		def cleanup!
 			each_index do |key|
 				unless a = class_const.find_by_key(at(key))
-					puts "Deleting #{key} because not #{a.inspect}" if DEBUG
+					Log.debug "Deleting #{key} because not #{a.inspect}"
 					delete at(key)
 				end
 			end
 			if size < 1
-				puts "Deleting collection #{@name} because empty" if DEBUG
+				Log.debug "Deleting collection #{@name} because empty"
 				remove!
 			end
 		end

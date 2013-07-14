@@ -219,10 +219,10 @@ module Seabright
 			def generate_id
 				v = new_id
 				while exists?(v) do
-					puts "[RedisObject] Collision at id: #{v}" if Debug.verbose?
+					Log.verbose "[RedisObject] Collision at id: #{v}"
 					v = new_id
 				end
-				puts "[RedisObject] Reserving key: #{v}" if Debug.verbose?
+				Log.verbose "[RedisObject] Reserving key: #{v}"
 				reserve(v)
 				v
 			end
@@ -250,7 +250,7 @@ module Seabright
 						if a = find_by_key(hkey(member))
 							y << a
 						else
-							puts "[#{name}] Object listed but not found: #{member}" if DEBUG
+							Log.debug "[#{name}] Object listed but not found: #{member}"
 							store.srem(plname,member)
 						end
 					end

@@ -45,10 +45,10 @@ module Seabright
 					def view_as_hash(name)
 						return uncached_view_as_hash(name) unless self.class.view_should_be_cached?(name)
 						if v = view_from_cache(name)
-							puts "  Got view from cache: #{name}" if DEBUG
+							Log.debug "  Got view from cache: #{name}"
 							Yajl::Parser.parse(v)
 						else
-							puts "  View cache miss: #{name}" if DEBUG
+							Log.debug "  View cache miss: #{name}"
 							cache_view_content(name)[0]
 						end
 					end
@@ -57,10 +57,10 @@ module Seabright
 					def view_as_json(name)
 						return uncached_view_as_json(name) unless self.class.view_should_be_cached?(name)
 						if v = view_from_cache(name)
-							puts "  Got view from cache: #{name}" if DEBUG
+							Log.debug "  Got view from cache: #{name}"
 							v
 						else
-							puts "  View cache miss: #{name}" if DEBUG
+							Log.debug "  View cache miss: #{name}"
 							cache_view_content(name)[1]
 						end
 					end
@@ -107,7 +107,7 @@ module Seabright
 				self.class_eval do
 					
 					def invalidate_cached_views(*names)
-						puts "Invalidating cached views: #{names.join(", ")}" if Debug.verbose?
+						Log.verbose "Invalidating cached views: #{names.join(", ")}"
 						run_script(:CachedViewInvalidator, [cached_view_key], names, CachedViewInvalidator)
 						self.class.cache_invalidation_hooks do |hook|
 							hook.call(names)
@@ -125,7 +125,7 @@ module Seabright
 					
 					def invalidate_downstream!
 						return unless invalidations(:down).size > 0
-						puts "Invalidating downstream: #{invalidations(:down).inspect}" if Debug.verbose?
+						Log.verbose "Invalidating downstream: #{invalidations(:down).inspect}"
 						invalidations(:down).each do |col|
 							if has_collection?(col) and (colctn = get_collection(col))
 								colctn.each do |obj|
@@ -137,7 +137,7 @@ module Seabright
 					
 					def invalidate_upstream!
 						return unless invalidations(:up).size > 0
-						puts "Invalidating upstream: #{invalidations(:up).inspect}" if Debug.verbose?
+						Log.verbose "Invalidating upstream: #{invalidations(:up).inspect}"
 						backreferences.each do |obj|
 							obj = Object.const_get(obj) if obj.is_a?(String) or obj.is_a?(Symbol)
 							if invalidations(:up).include?(obj.class) and obj.respond_to?(:invalidated_by_other)
@@ -170,7 +170,7 @@ module Seabright
 					
 					def invalidated_by_other(obj,chain)
 						return if chain.include?(self.hkey)
-						puts "#{self.class.name}:#{self.id}'s view caches were invalidated by upstream object: #{obj.class.name}:#{obj.id} (chain:#{chain.inspect})" if Debug.verbose?
+						Log.verbose "#{self.class.name}:#{self.id}'s view caches were invalidated by upstream object: #{obj.class.name}:#{obj.id} (chain:#{chain.inspect})"
 						@invalidation_chain = chain
 						[:invalidated_by,"invalidated_by_#{obj.class.name.underscore}".to_sym].each do |meth_sym|
 							if respond_to?(meth_sym)

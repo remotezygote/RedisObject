@@ -16,7 +16,7 @@ module Seabright
 			end
 			
 			def benchmark_out(method,args,time)
-				puts "[RedisObject::Benchmark] #{method}(#{args.join(",")}): #{time}"
+				Log.debug "[RedisObject::Benchmark] #{method}(#{args.join(",")}): #{time}"
 			end
 			
 			def benchmark!

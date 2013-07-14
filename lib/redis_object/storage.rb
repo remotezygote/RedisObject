@@ -66,7 +66,7 @@ module Seabright
 				raise "Directory does not exist!" unless Dir.exists?(File.dirname(path))
 				adapters.each do |name,adptr|
 					if adptr.respond_to? :dump_to_file
-						puts "Dumping #{name} into #{path}/#{name.to_s}.dump"
+						Log.info "Dumping #{name} into #{path}/#{name.to_s}.dump"
 						adptr.dump_to_file("#{path}/#{name.to_s}.dump")
 					end
 				end
@@ -77,7 +77,7 @@ module Seabright
 				Dir.glob(path + "/*.dump").each do |file|
 					name = file.gsub(/\.[^\.]+$/,'').gsub(/.*\//,'').to_sym
 					if (stor = store(name)) && stor.respond_to?(:restore_from_file)
-						puts "Restoring #{name} from #{file}"
+						Log.info "Restoring #{name} from #{file}"
 						stor.restore_from_file(file)
 					end
 				end

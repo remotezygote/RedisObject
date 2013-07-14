@@ -23,7 +23,7 @@ module Seabright
 					out = (@tmp_store || store).evalsha(get_script_sha(name,source),keys,args)
 				rescue Redis::CommandError => e
 					if e.message == NoScriptError && @rescue_recurse < 3
-						puts "Rescuing NOSCRIPT error for #{name} - running again..." if DEBUG
+						Log.debug "Rescuing NOSCRIPT error for #{name} - running again..."
 						untrack_script name
 						@rescue_recurse += 1
 						out = (@tmp_store || store).evalsha(get_script_sha(name,source),keys,args)

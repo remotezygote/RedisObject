@@ -4,7 +4,7 @@ module Seabright
 		class AWS
 			
 			def initialize(config={})
-				puts "Got config: '#{config.inspect}'"
+				Log.debug "Got config: '#{config.inspect}'"
 				@config = config
 			end
 			

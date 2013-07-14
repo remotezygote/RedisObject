@@ -45,4 +45,6 @@ module Seabright
 	end
 end
 
+require "redis_object/logger"
+
 ::RedisObject = Seabright::RedisObject

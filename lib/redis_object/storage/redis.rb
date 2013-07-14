@@ -4,11 +4,11 @@ module Seabright
 			
 			def method_missing(sym, *args, &block)
 				return super unless connection.respond_to?(sym)
-				puts "[Storage::Redis] #{sym}(#{args.inspect.gsub(/\[|\]/m,'')})" if Debug.verbose?
+				Log.verbose "[Storage::Redis] #{sym}(#{args.inspect.gsub(/\[|\]/m,'')})"
 				begin
 					connection.send(sym,*args, &block)
 				rescue ::Redis::InheritedError, ::Redis::TimeoutError => err
-					puts "Rescued: #{err.inspect}" if DEBUG
+					Log.debug "Rescued: #{err.inspect}"
 					reset
 					connection.send(sym,*args, &block)
 				end
@@ -16,7 +16,7 @@ module Seabright
 			
 			def new_connection
 				require 'redis'
-				puts "Connecting to Redis with: #{config_opts(:path, :db, :password, :host, :port, :timeout, :tcp_keepalive).inspect}" if DEBUG
+				Log.debug "Connecting to Redis with: #{config_opts(:path, :db, :password, :host, :port, :timeout, :tcp_keepalive).inspect}"
 				::Redis.new(config_opts(:path, :db, :password, :host, :port, :timeout, :tcp_keepalive))
 			end
 			

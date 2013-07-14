@@ -6,7 +6,7 @@ module Seabright
 				begin
 					val.is_a?(DateTime) || val.is_a?(Date) || val.is_a?(Time) ? val : ( val.is_a?(String) ? DateTime.parse(val) : nil )
 				rescue StandardError => e
-					puts "Could not parse value as date using Date.parse. Returning nil instead. Value: #{val.inspect}\nError: #{e.inspect}" if DEBUG
+					Log.debug "Could not parse value as date using Date.parse. Returning nil instead. Value: #{val.inspect}\nError: #{e.inspect}"
 					nil
 				end
 			end

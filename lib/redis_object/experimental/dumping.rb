@@ -30,7 +30,7 @@ module Seabright
 		end
 		
 		def self.load_object(klass,pkt)
-			puts "Loading a #{klass.name}: #{pkt.inspect}" if DEBUG
+			Log.debug "Loading a #{klass.name}: #{pkt.inspect}"
 			cols = nil
 			pkt.delete(:collections).each do |col_name|
 				if objs = pkt.delete(col_name.to_sym)
@@ -41,7 +41,7 @@ module Seabright
 			obj = klass.create(pkt)
 			if cols
 				cols.each do |name,objs|
-					puts "  Loading in collected #{name}: #{objs.inspect}" if DEBUG
+					Log.debug "  Loading in collected #{name}: #{objs.inspect}"
 					obj.collect_type_by_key name, *objs
 				end
 			end
