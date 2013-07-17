@@ -11,10 +11,10 @@ module Seabright
 						if filters = self.class.filters_for(method)
 							filters.each do |f|
 								args = send(f,*args)
+								unless args.is_a?(Array)
+									args = [nil,nil]
+								end
 							end
-						end
-						unless args.is_a?(Array)
-							args = [nil,nil]
 						end
 						send("unfiltered_#{method.to_s}".to_sym,*args)
 					end
