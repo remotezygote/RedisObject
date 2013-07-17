@@ -14,6 +14,9 @@ module Seabright
 								args = send(f,*args)
 							end
 						end
+						unless args.is_a?(Array)
+							args = [nil,nil]
+						end
 						send("unfiltered_#{method.to_s}".to_sym,*args)
 					end
 					
