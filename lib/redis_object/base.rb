@@ -245,7 +245,7 @@ module Seabright
 			
 			def all
 				kys = store.smembers(plname)
-				Enumerator.new do |y|
+				ListEnumerator.new(kys) do |y|
 					kys.each do |member|
 						if a = find_by_key(hkey(member))
 							y << a
@@ -343,7 +343,7 @@ module Seabright
 			
 			def match(pkt)
 				kys = run_script(pkt.keys.count > 1 ? :MultiMatcher : :Matcher,[plname],pkt.flatten.map{|i| i.is_a?(Regexp) ? convert_regex_to_lua(i) : i.to_s })
-				Enumerator.new do |y|
+				ListEnumerator.new(kys) do |y|
 					kys.each do |k|
 						y << find(k)
 					end
