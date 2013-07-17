@@ -83,7 +83,7 @@ module Seabright
 			end
 			
 			def has_sort_index?(k)
-				sort_indices.include?(k.to_sym)
+				k and sort_indices.include?(k.to_sym)
 			end
 			
 			def latest
