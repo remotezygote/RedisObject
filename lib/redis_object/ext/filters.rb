@@ -10,10 +10,8 @@ module Seabright
 					def filtered_method_call(method,*args)
 						if filters = self.class.filters_for(method)
 							filters.each do |f|
+								next unless args.is_a?(Array) and !args[0].nil?
 								args = send(f,*args)
-								unless args.is_a?(Array)
-									args = [nil,nil]
-								end
 							end
 						end
 						send("unfiltered_#{method.to_s}".to_sym,*args)
