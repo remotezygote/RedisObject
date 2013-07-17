@@ -13,7 +13,7 @@ module Seabright
 								args = send(f,*args)
 							end
 						end
-						args ? send("unfiltered_#{method.to_s}".to_sym,*args) : nil
+						args ? send("unfiltered_#{method.to_s}".to_sym,*args) : [nil,nil]
 					end
 					
 					alias_method :unfiltered_get, :get unless method_defined?(:unfiltered_get)

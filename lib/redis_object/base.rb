@@ -116,6 +116,7 @@ module Seabright
 		end
 		
 		def set(k,v)
+			return nil if k.nil?
 			return set_ref(k,v) if v.is_a?(RedisObject)
 			store.hset(hkey, k.to_s, v.to_s)
 			cached_hash_values[k.to_s] = v
