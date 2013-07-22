@@ -10,10 +10,14 @@ module Seabright
 					def filtered_method_call(method,*args)
 						if filters = self.class.filters_for(method)
 							filters.each do |f|
+								next unless args.is_a?(Array) and !args[0].nil?
 								args = send(f,*args)
 							end
 						end
-						args ? send("unfiltered_#{method.to_s}".to_sym,*args) : nil
+						unless args.is_a?(Array)
+							args = [nil,nil]
+						end
+						send("unfiltered_#{method.to_s}".to_sym,*args)
 					end
 					
 					alias_method :unfiltered_get, :get unless method_defined?(:unfiltered_get)

@@ -18,7 +18,7 @@ module Seabright
 		end
 		
 		def type_filter_for(prefix,k)
-			if (fmt = self.class.field_formats[k.to_sym]) && (sym = "#{prefix}_#{fmt}".to_sym) && respond_to?(sym)
+			if k and (fmt = self.class.field_formats[k.to_sym]) and (sym = "#{prefix}_#{fmt}".to_sym) and respond_to?(sym)
 				return sym
 			end
 			nil
