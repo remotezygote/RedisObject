@@ -278,19 +278,27 @@ module Seabright
 				end
 			end
 			
+			NilPattern = 'nilpattern:'
+			
 			RedisObject::ScriptSources::Matcher = "local itms = redis.call('SMEMBERS',KEYS[1])
 				local out = {}
 				local val
 				local pattern
 				for i, v in ipairs(itms) do
 					val = redis.call('HGET',v..'_h',ARGV[1])
-					if ARGV[2]:find('^pattern:') then
-						pattern = ARGV[2]:gsub('^pattern:','')
-						if val:match(pattern) ~= nil then
-							table.insert(out,itms[i])
+					if val then
+						if ARGV[2]:find('^pattern:') then
+							pattern = ARGV[2]:gsub('^pattern:','')
+							if val:match(pattern) ~= nil then
+								table.insert(out,itms[i])
+							end
+						else
+							if val == ARGV[2] then
+								table.insert(out,itms[i])
+							end
 						end
 					else
-						if val == ARGV[2] then
+						if ARGV[2] == '#{NilPattern}' then
 							table.insert(out,itms[i])
 						end
 					end
@@ -333,7 +341,11 @@ module Seabright
 								end
 							end
 						else
-							good = false
+							if matchers[n][2] == '#{NilPattern}' then
+								good = true
+							else
+								good = false
+							end
 						end
 					end
 					if good == true then
@@ -343,7 +355,18 @@ module Seabright
 				return out".gsub(/\t/,'').freeze
 			
 			def match(pkt)
-				kys = run_script(pkt.keys.count > 1 ? :MultiMatcher : :Matcher,[plname],pkt.flatten.map{|i| i.is_a?(Regexp) ? convert_regex_to_lua(i) : i.to_s })
+				mtchr = pkt.keys.count > 1 ? :MultiMatcher : :Matcher
+				pkt = pkt.flatten.map do |i|
+					case i
+					when Regexp
+						convert_regex_to_lua(i)
+					when NilClass
+						NilPattern
+					else
+						i.to_s
+					end
+				end
+				kys = run_script(mtchr,[plname],pkt)
 				ListEnumerator.new(kys) do |y|
 					kys.each do |k|
 						y << find(k)

@@ -45,9 +45,19 @@ describe RedisObject do
 	
 	it "should be found by complex matchers" do
 		obj = ObjectTests::User.find(user_id: "test")
-		obj.should_not be_nil
+		obj.first.should_not be_nil
 		obj = ObjectTests::User.find(user_id: /test/)
-		obj.should_not be_nil
+		obj.first.should_not be_nil
+	end
+	
+	it "should be found by nil matchers" do
+		obj = ObjectTests::User.find(blah: nil)
+		obj.first.should_not be_nil
+	end
+	
+	it "should be found by regex matchers that do not exist as keys" do
+		obj = ObjectTests::User.find(blah: /test/)
+		obj.first.should be_nil
 	end
 	
 	it "can recollect objects" do
