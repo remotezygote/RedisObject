@@ -218,7 +218,7 @@ module Seabright
 		
 		def indexed(idx,num=-1,reverse=false)
 			keys = keys_by_index(idx,num,reverse)
-			out = Enumerator.new do |y|
+			out = ListEnumerator.new(keys) do |y|
 				keys.each do |member|
 					if a = class_const.find_by_key(member)
 						y << a
@@ -243,7 +243,7 @@ module Seabright
 		
 		def keys_by_index(idx,num=-1,reverse=false)
 			keys = run_script(reverse ? :RevScript : :FwdScript, [temp_key, index_key(idx), key, num])
-			Enumerator.new do |y|
+			ListEnumerator.new(keys) do |y|
 				keys.each do |member|
 					y << member
 				end
@@ -276,7 +276,7 @@ module Seabright
 		def match(pkt)
 			Enumerator.new do |y|
 				each do |i|
-					if pkt.map {|hk,va| i.get(hk)==va }.all?
+					if pkt.all? {|hk,va| i.get(hk)==va }
 						y << i
 					end
 				end
