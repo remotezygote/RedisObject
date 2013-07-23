@@ -4,6 +4,7 @@ require 'yajl'
 require 'set'
 
 require "redis_object/storage"
+require "redis_object/ext/list_enumerator"
 
 require "redis_object/ext/script_cache"
 require "redis_object/base"

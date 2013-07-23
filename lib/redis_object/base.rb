@@ -246,7 +246,7 @@ module Seabright
 			
 			def all
 				kys = store.smembers(plname)
-				Enumerator.new do |y|
+				ListEnumerator.new(kys) do |y|
 					kys.each do |member|
 						if a = find_by_key(hkey(member))
 							y << a
@@ -367,7 +367,7 @@ module Seabright
 					end
 				end
 				kys = run_script(mtchr,[plname],pkt)
-				Enumerator.new do |y|
+				ListEnumerator.new(kys) do |y|
 					kys.each do |k|
 						y << find(k)
 					end
