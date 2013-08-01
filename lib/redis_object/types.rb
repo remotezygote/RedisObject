@@ -56,7 +56,7 @@ module Seabright
 					register_type(sym,org)
 					send(sym,*args,&block)
 				else
-					super(sym,*args,&block)
+					untyped_method_missing(sym,*args,&block) if respond_to?(:untyped_method_missing)
 				end
 			end
 			
@@ -179,6 +179,7 @@ module Seabright
 		end
 		
 		def self.included(base)
+			base.send(:alias_method, :untyped_method_missing, :method_missing) if base.respond_to?(:method_missing)
 			base.extend(ClassMethods)
 		end
 		

@@ -23,25 +23,60 @@ require "redis_object/ext/triggers"
 require "redis_object/ext/filters"
 require "redis_object/ext/benchmark"
 
+require "defined"
+Defined.enable!
+
 module Seabright
+	
+	BaseModules = [
+		Filters,
+		ObjectBase,
+		InheritanceTracking,
+		Keys,
+		Types,
+		DefaultValues,
+		Collections,
+		Triggers,
+		Indices,
+		Views,
+		ViewCaching,
+		Timestamps,
+		Benchmark,
+		Dumping,
+		Storage
+	]
+	
 	class RedisObject
 		
-		include Seabright::Filters
-		include Seabright::ObjectBase
-		include Seabright::InheritanceTracking
-		include Seabright::CachedScripts
-		include Seabright::Storage
-		include Seabright::Keys
-		include Seabright::Types
-		include Seabright::DefaultValues
-		include Seabright::Collections
-		include Seabright::Triggers
-		include Seabright::Indices
-		include Seabright::Views
-		include Seabright::ViewCaching
-		include Seabright::Timestamps
-		include Seabright::Benchmark
-		include Seabright::Dumping
+		def base_object
+			@ro_bo ||= self.class.base_object
+		end
+		
+		def self.base_object
+			Seabright::Storage.const_get(adapter).base_object
+		end
+		
+		def self.inherited(base)
+			Seabright::BaseModules.each do |mod|
+				base.send(:include, mod)
+			end
+		end
+		
+		def self.defined(*args)
+			if superclass == RedisObject
+				self.send(:include, base_object)
+			end
+		end
+		
+		def self.deep_const_get(const,base=nil)
+			if Symbol === const
+				const = const.to_s
+			else
+				const = const.to_str.dup
+			end
+			base ||= const.sub!(/^::/, '') ? Object : self
+			const.split(/::/).inject(base) { |mod, name| mod.const_get(name) }
+		end
 		
 	end
 end

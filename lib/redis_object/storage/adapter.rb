@@ -38,6 +38,7 @@ module Seabright
 			end
 			
 			def new_connection
+				# Should create a new connection to the storage service
 			end
 			
 		end
