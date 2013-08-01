@@ -2,22 +2,26 @@ module Seabright
 	
 	module Collections
 		
-		def hkey_col(ident = nil)
-			"#{hkey}:collections"
-		end
-		
 		def load(o_id)
 			super(o_id)
-			store.smembers(hkey_col).each do |name|
-				collections[name] = Seabright::Collection.load(name,self)
-				define_access(name) do
-					get_collection(name)
-				end
-				define_access(name.to_s.singularize) do
-					get_collection(name).latest
-				end
+			collection_names.each do |name|
+				load_collection name
 			end
 			true
+		end
+		
+		def load_collection(name)
+			collections[name] = self.class.collection_class.load(name,self)
+			define_access(name) do
+				get_collection(name)
+			end
+			define_access(name.to_s.singularize) do
+				get_collection(name).latest
+			end
+		end
+		
+		def hkey_col(ident = nil)
+			"#{hkey}:collections"
 		end
 		
 		def delete_child(obj)
@@ -48,26 +52,21 @@ module Seabright
 			reference obj
 		end
 		
-		def remove_collection!(name)
-			store.srem hkey_col, name
-		end
-		
-		def referenced_by(obj)
-			store.sadd(ref_key,obj.hkey)
-		end
-
-		def backreferences(cls = nil)
-			out = store.smembers(ref_key).map do |backreference_hkey|
-				obj = RedisObject.find_by_key(backreference_hkey)
+		def backreferences(cls = nil, &block)
+			out = backreference_keys.map do |backreference_hkey|
+				obj = self.class.find_by_key(backreference_hkey)
 				if cls && !obj.is_a?(cls)
 					nil
 				else
+					if block_given?
+						yield obj
+					end
 					obj
 				end
 			end
 			out.compact
 		end
-
+		
 		def dereference_from(obj)
 			obj.get_collection(collection_name).delete(hkey)
 		end
@@ -88,17 +87,13 @@ module Seabright
 			end
 		end
 		
-		def has_collection?(name)
-			collection_names.include?(name.to_s)
-		end
-		
 		def get_collection(name)
 			if has_collection?(name)
-				collections[name.to_s] ||= Collection.load(name,self)
+				collections[name.to_s] ||= self.class.collection_class.load(name,self)
 			else
-				store.sadd hkey_col, name
+				track_collection name
 				@collection_names << name.to_s
-				collections[name.to_s] ||= Collection.load(name,self)
+				collections[name.to_s] ||= self.class.collection_class.load(name,self)
 				define_access(name.to_s.pluralize) do
 					get_collection(name)
 				end
@@ -109,12 +104,12 @@ module Seabright
 			collections[name.to_s]
 		end
 		
-		def collections
-			@collections ||= {}
+		def has_collection?(name)
+			collection_names.include?(name.to_s)
 		end
 		
-		def collection_names
-			@collection_names ||= store.smembers(hkey_col)
+		def collections
+			@collections ||= {}
 		end
 		
 		def mset(dat)
@@ -136,6 +131,12 @@ module Seabright
 		
 		module ClassMethods
 			
+			def reference(obj)
+				raise "Not an object." unless obj.is_a?(RedisObject)
+				get_collection(obj.collection_name) << obj.hkey
+				obj.referenced_by self
+			end
+			
 			def hkey_col(ident = nil)
 				"#{hkey(ident)}:collections"
 			end
@@ -150,22 +151,12 @@ module Seabright
 				self.name.split('::').last.pluralize.underscore.to_sym
 			end
 			
-			def reference(obj)
-				name = obj.collection_name
-				store.sadd hkey_col, name
-				get_collection(name) << obj.hkey
-			end
-			
 			def <<(obj)
 				reference obj
 			end
 
 			def push(obj)
 				reference obj
-			end
-			
-			def remove_collection!(name)
-				store.srem hkey_col, name
 			end
 			
 			def get(k)
@@ -177,14 +168,26 @@ module Seabright
 					super(k)
 				end
 			end
-			
-			def has_collection?(name)
-				store.sismember(hkey_col,name.to_s)
-			end
-			
+
 			def get_collection(name)
-				collections[name.to_s] ||= Collection.load(name,self)
+				if has_collection?(name)
+					collections[name.to_s] ||= collection_class.load(name,self)
+				else
+					track_collection name
+					@collection_names << name.to_s
+					collections[name.to_s] ||= collection_class.load(name,self)
+					define_access(name.to_s.pluralize) do
+						get_collection(name)
+					end
+					define_access(name.to_s.singularize) do
+						get_collection(name).latest
+					end
+				end
 				collections[name.to_s]
+			end
+
+			def has_collection?(name)
+				collection_names.include?(name.to_s)
 			end
 			
 			def collections
@@ -199,9 +202,7 @@ module Seabright
 		
 	end
 	
-	class Collection < Array
-		
-		include Seabright::CachedScripts
+	module Collection
 		
 		def initialize(name,owner)
 			@name = name.to_s
@@ -234,20 +235,16 @@ module Seabright
 			end
 		end
 		
-		def temp_key
-			"#{key}::zintersect_temp::#{RedisObject.new_id(4)}"
+		def delete(obj)
+			k = obj.class == String ? obj : obj.hkey
+			_delete k
+			super(k)
 		end
 		
-		RedisObject::ScriptSources::FwdScript = "redis.call('ZINTERSTORE', KEYS[1], 2, KEYS[2], KEYS[3], 'WEIGHTS', 1, 0)\nlocal keys = redis.call('ZRANGE', KEYS[1], 0, KEYS[4])\nredis.call('DEL', KEYS[1])\nreturn keys".freeze
-		RedisObject::ScriptSources::RevScript = "redis.call('ZINTERSTORE', KEYS[1], 2, KEYS[2], KEYS[3], 'WEIGHTS', 1, 0)\nlocal keys = redis.call('ZREVRANGE', KEYS[1], 0, KEYS[4])\nredis.call('DEL', KEYS[1])\nreturn keys".freeze
-		
-		def keys_by_index(idx,num=-1,reverse=false)
-			keys = run_script(reverse ? :RevScript : :FwdScript, [temp_key, index_key(idx), key, num])
-			ListEnumerator.new(keys) do |y|
-				keys.each do |member|
-					y << member
-				end
-			end
+		def <<(obj)
+			k = obj.class == String ? obj : obj.hkey
+			_concat k
+			super(k)
 		end
 		
 		def index_key(idx)
@@ -344,28 +341,12 @@ module Seabright
 			end
 		end
 		
-		def delete(obj)
-			k = obj.class == String ? obj : obj.hkey
-			store.zrem(key,k)
-			super(k)
-		end
-		
-		def clear!
-			store.zrem(key,self.join(" "))
-		end
-		
-		def <<(obj)
-			k = obj.class == String ? obj : obj.hkey
-			store.zadd(key,store.zcount(key,"-inf", "+inf"),k)
-			super(k)
-		end
-		
 		def push(obj)
 			self << obj
 		end
 		
 		def class_const
-			self.class.class_const_for(@name)
+			self.class.class_const_for(@name,@owner)
 		end
 		
 		def store
@@ -376,18 +357,22 @@ module Seabright
 			"#{@owner ? "#{@owner.key}:" : ""}COLLECTION:#{@name}"
 		end
 		
-		class << self
+		module ClassMethods
+			
+			def class_const_for(name,owner)
+				deep_const_get(name.to_s.classify.to_sym) rescue owner.is_a?(Class) ? owner : owner.class
+			end
 			
 			def load(name,owner)
 				out = new(name,owner)
-				out.replace class_const_for(name).store.zrange(out.key,0,-1)
+				out.replace keys_for(out,name,owner)
 				out
 			end
 			
-			def class_const_for(name)
-				Object.const_get(name.to_s.classify.to_sym) rescue RedisObject
-			end
-
+		end
+		
+		def self.included(base)
+			base.extend ClassMethods
 		end
 		
 	end

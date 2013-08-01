@@ -12,6 +12,8 @@ module Seabright
 			self.class.run_script(name,keys,args,source,store)
 		end
 		
+		SCRIPT_KEY_PREFIX = "ScriptCache::SHA::".freeze
+		
 		module ClassMethods
 			
 			NoScriptError = "NOSCRIPT No matching script. Please use EVAL.".freeze
@@ -68,8 +70,6 @@ module Seabright
 				(self.const_defined?(name.to_sym) && self.const_get(name.to_sym)) || (RedisObject::ScriptSources.const_defined?(name.to_sym) && RedisObject::ScriptSources.const_get(name.to_sym)) || nil
 			end
 			
-			SCRIPT_KEY_PREFIX = "ScriptCache::SHA::".freeze
-			
 			def expire_all_script_shas(store_name=nil)
 				store_obj = store_name.is_a?(String) || store_name.is_a?(Symbol) ? store(store_name.to_sym) : store_name
 				store_obj.keys(script_sha_key("*")).each do |k|
@@ -84,8 +84,25 @@ module Seabright
 			
 		end
 		
+		module AdapterMethods
+			
+			def expire_all_script_shas
+				keys(script_sha_key("*")).each do |k|
+					del k
+				end
+				$ScriptSHAMap = {}
+			end
+			
+			def script_sha_key(name)
+				"#{SCRIPT_KEY_PREFIX}#{name.to_s}"
+			end
+			
+		end
+		
 		def self.included(base)
 			base.extend(ClassMethods)
+			base.extend(AdapterMethods)
+			base.store.extend(AdapterMethods) if base.respond_to?(:store)
 		end
 		
 	end

@@ -27,7 +27,7 @@ module ScriptCacheSpec
 			GenericObject.indexed(:created_at,-1,false).to_a.last.id.should eq("4")
 			
 			cnt = $ScriptSHAMap.keys.count
-			RedisObject.untrack_script :RevScript
+			GenericObject.untrack_script :RevScript
 			$ScriptSHAMap.keys.count.should eq(cnt-1)
 			
 		end
@@ -45,7 +45,7 @@ module ScriptCacheSpec
 			# $ScriptSHAMap.keys.count.should eq(1)
 			
 			RedisObject.stores.each do |(name,store)|
-				RedisObject.expire_all_script_shas(store)
+				store.expire_all_script_shas
 			end
 			
 			$ScriptSHAMap.keys.count.should eq(0)

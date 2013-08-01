@@ -13,6 +13,19 @@ module Seabright
 			self
 		end
 		
+		def save
+			set(:class, self.class.name)
+			set(id_sym,id.gsub(/.*:/,''))
+			set(:key, key)
+			_save
+		end
+		
+		def delete!
+			_delete!
+			dereference_all!
+			nil
+		end
+		
 		def new_id(complexity = 8)
 			self.class.new_id(complexity)
 		end
@@ -25,11 +38,6 @@ module Seabright
 			self.class.reserve(k)
 		end
 		
-		# oved this to the dumper module in experimental - remove when it gets to base
-		# def to_json
-		# 	Yajl::Encoder.encode(actual)
-		# end
-		
 		def id
 			@id || get(id_sym) || set(id_sym, generate_id)
 		end
@@ -39,46 +47,84 @@ module Seabright
 			true
 		end
 		
-		def save
-			set(:class, self.class.name)
-			set(id_sym,id.gsub(/.*:/,''))
-			set(:key, key)
-			store.sadd(self.class.plname, key)
-			store.del(reserve_key)
-		end
-		
-		def delete!
-			store.del key
-			store.del hkey
-			store.del reserve_key
-			store.srem(self.class.plname, key)
-			# store.smembers(ref_key).each do |k|
-			# 	if self.class.find_by_key(k)
-			# 		
-			# 	end
-			# end
-			dereference_all!
-			nil
-		end
-		
 		def dereference_all!
 			
 		end
-
-		def raw
-			store.hgetall(hkey).inject({}) {|acc,(k,v)| acc[k.to_sym] = enforce_format(k,v); acc }
+		
+		def inspect
+			raw
 		end
-		alias_method :inspect, :raw
-		alias_method :actual, :raw
+		
+		def actual
+			raw
+		end
+		
+		def is_set?(k)
+			_is_set?(k)
+		end
+		
+		def set(k,v)
+			return nil if k.nil?
+			return set_ref(k,v) if v.is_a?(RedisObject)
+			_set(k,v)
+			cached_hash_values[k.to_s] = v
+			define_setter_getter(k)
+			v
+		end
+		
+		def set_ref(k,v)
+			return unless v.is_a?(RedisObject)
+			track_ref_key(k)
+			_set_ref(k,v)
+			cached_hash_values[k.to_s] = v
+			define_setter_getter(k)
+			v
+		end
+		
+		def track_ref_key(k)
+			_track_ref_key(k)
+		end
+
+		def is_ref_key?(k)
+			if _is_ref_key?(k)
+				return true
+			end
+			false
+		end
+		
+		def setnx(k,v)
+			if success = _setnx(k,v)
+				cached_hash_values[k.to_s] = v
+				define_setter_getter(k)
+			end
+			success
+		end
+		
+		def mset(dat)
+			_mset dat
+			cached_hash_values.merge!(dat)
+			dat.each do |k,v|
+				define_setter_getter(k)
+			end
+			dat
+		end
+		
+		def unset(*k)
+			_unset(*k)
+			k.each do |ky|
+				cached_hash_values.delete ky.to_s
+				undefine_setter_getter(ky)
+			end
+		end
 		
 		def get(k)
-			cached_hash_values[k.to_s] ||= _get(k)
+			cached_hash_values[k.to_s] ||= getter(k)
 		end
 		
-		def _get(k)
-			if is_ref_key?(k) && (v = get_reference(store.hget(hkey, k.to_s)))
-				define_setter_getter(k)
-			elsif v = store.hget(hkey, k.to_s)
+		def getter(k)
+			if is_ref_key?(k) && (v = get_reference(_get(k)))
+				define_ref_setter_getter(k)
+			elsif v = _get(k)
 				define_setter_getter(k)
 			end
 			v
@@ -86,19 +132,6 @@ module Seabright
 		
 		def [](k)
 			get(k)
-		end
-		
-		def is_set?(k)
-			store.hexists(hkey, k.to_s)
-		end
-		
-		def mset(dat)
-			store.hmset(hkey, *(dat.inject([]){|acc,(k,v)| acc << [k,v] }.flatten))
-			cached_hash_values.merge!(dat)
-			dat.each do |k,v|
-				define_setter_getter(k)
-			end
-			dat
 		end
 		
 		def define_setter_getter(key)
@@ -110,65 +143,29 @@ module Seabright
 			end
 		end
 		
+		def define_ref_setter_getter(key)
+			define_access(key) do
+				get_reference(key)
+			end
+			define_access("#{key.to_s}=") do |val|
+				set_ref(key,val)
+			end
+		end
+		
 		def undefine_setter_getter(key)
 			undefine_access(key)
 			undefine_access("#{key.to_s}=")
 		end
 		
-		def set(k,v)
-			return nil if k.nil?
-			return set_ref(k,v) if v.is_a?(RedisObject)
-			store.hset(hkey, k.to_s, v.to_s)
-			cached_hash_values[k.to_s] = v
-			define_setter_getter(k)
-			v
-		end
-		
-		def set_ref(k,v)
-			return unless v.is_a?(RedisObject)
-			track_ref_key(k)
-			store.hset(hkey, k.to_s, v.hkey)
-			cached_hash_values[k.to_s] = v
-			define_setter_getter(k)
-			v
-		end
-		
-		def track_ref_key(k)
-			store.sadd(ref_field_key, k.to_s)
-		end
-		
-		def is_ref_key?(k)
-			if store.sismember(ref_field_key,k.to_s)
-				return true
-			end
-			false
-		end
-		
 		def get_reference(hkey)
-			if o = RedisObject.find_by_key(hkey)
+			if o = self.class.find_by_key(hkey)
 				return o
 			end
 			nil
 		end
 		
-		def setnx(k,v)
-			if success = store.hsetnx(hkey, k.to_s, v.to_s)
-				cached_hash_values[k.to_s] = v
-				define_setter_getter(k)
-			end
-			success
-		end
-		
 		def []=(k,v)
 			set(k,v)
-		end
-		
-		def unset(*k)
-			store.hdel(hkey, k.map(&:to_s))
-			k.each do |ky|
-				cached_hash_values.delete ky.to_s
-				undefine_setter_getter(ky)
-			end
 		end
 		
 		private
@@ -190,15 +187,6 @@ module Seabright
 			self.class.id_sym(cls)
 		end
 		
-		# Not used yet...
-		# def load_all_hash_values
-		# 	@cached_hash_values = store.hgetall(hkey)
-		# 	cached_hash_values.keys.dup.each do |key|
-		# 		next if key == "class"
-		# 		define_setter_getter(key)
-		# 	end
-		# end
-		# 
 		def cached_hash_values
 			@cached_hash_values ||= {}
 		end
@@ -217,6 +205,47 @@ module Seabright
 		
 		module ClassMethods
 			
+			def all
+				kys = all_keys
+				ListEnumerator.new(kys) do |y|
+					kys.each do |member|
+						if a = find_by_key(hkey(member))
+							y << a
+						else
+							Log.debug "[#{name}] Object listed but not found: #{member}"
+							untrack_key member
+						end
+					end
+				end
+			end
+			
+			def first
+				if m = all_keys
+				 self.grab(m.first)
+				else
+					nil
+				end
+			end
+			
+			def match(pkt)
+				kys = match_keys(pkt)
+				ListEnumerator.new(kys) do |y|
+					kys.each do |k|
+						y << find(k)
+					end
+				end
+			end
+			
+			def grab(ident)
+				case ident
+				when String, Symbol
+					return grab_id(ident)
+				when Hash
+					return match(ident)
+				end
+				nil
+			end
+			
 			def generate_id
 				v = new_id
 				while exists?(v) do
@@ -226,10 +255,6 @@ module Seabright
 				Log.verbose "[RedisObject] Reserving key: #{v}"
 				reserve(v)
 				v
-			end
-			
-			def reserve(k)
-				store.set(reserve_key(k),Time.now.to_s)
 			end
 			
 			def new_id(complexity = 8)
@@ -244,156 +269,14 @@ module Seabright
 				cname.pluralize
 			end
 			
-			def all
-				kys = store.smembers(plname)
-				ListEnumerator.new(kys) do |y|
-					kys.each do |member|
-						if a = find_by_key(hkey(member))
-							y << a
-						else
-							Log.debug "[#{name}] Object listed but not found: #{member}"
-							store.srem(plname,member)
-						end
-					end
-				end
-			end
-			
-			def recollect!
-				store.keys("#{name}:*_h").each do |ky|
-					store.sadd(plname,ky.gsub(/_h$/,''))
-				end
-			end
-			
-			def first
-				if m = store.smembers(plname)
-				 self.grab(m.first)
-				else
-					nil
-				end
-			end
-			
 			def each
 				all.each do |o|
 					yield o
 				end
 			end
-			
-			NilPattern = 'nilpattern:'
-			
-			RedisObject::ScriptSources::Matcher = "local itms = redis.call('SMEMBERS',KEYS[1])
-				local out = {}
-				local val
-				local pattern
-				for i, v in ipairs(itms) do
-					val = redis.call('HGET',v..'_h',ARGV[1])
-					if val then
-						if ARGV[2]:find('^pattern:') then
-							pattern = ARGV[2]:gsub('^pattern:','')
-							if val:match(pattern) ~= nil then
-								table.insert(out,itms[i])
-							end
-						else
-							if val == ARGV[2] then
-								table.insert(out,itms[i])
-							end
-						end
-					else
-						if ARGV[2] == '#{NilPattern}' then
-							table.insert(out,itms[i])
-						end
-					end
-				end
-				return out".gsub(/\t/,'').freeze
-			
-			RedisObject::ScriptSources::MultiMatcher = "local itms = redis.call('SMEMBERS',KEYS[1])
-				local out = {}
-				local matchers = {}
-				local matcher = {}
-				local mod
-				for i=1,#ARGV do
-					mod = i % 2
-					if mod == 1 then
-						matcher[1] = ARGV[i]
-					else
-						matcher[2] = ARGV[i]
-						table.insert(matchers,matcher)
-						matcher = {}
-					end
-				end
-				local val
-				local good
-				local pattern
-				for i, v in ipairs(itms) do
-					good = true
-					for n=1,#matchers do
-						val = redis.call('HGET',v..'_h',matchers[n][1])
-						if val then
-							if matchers[n][2]:find('^pattern:') then
-								pattern = matchers[n][2]:gsub('^pattern:','')
-								if val:match(pattern) then
-									good = good
-								else
-									good = false
-								end
-							else
-								if val ~= matchers[n][2] then
-									good = false
-								end
-							end
-						else
-							if matchers[n][2] == '#{NilPattern}' then
-								good = true
-							else
-								good = false
-							end
-						end
-					end
-					if good == true then
-						table.insert(out,itms[i])
-					end
-				end
-				return out".gsub(/\t/,'').freeze
-			
-			def match(pkt)
-				mtchr = pkt.keys.count > 1 ? :MultiMatcher : :Matcher
-				pkt = pkt.flatten.map do |i|
-					case i
-					when Regexp
-						convert_regex_to_lua(i)
-					when NilClass
-						NilPattern
-					else
-						i.to_s
-					end
-				end
-				kys = run_script(mtchr,[plname],pkt)
-				ListEnumerator.new(kys) do |y|
-					kys.each do |k|
-						y << find(k)
-					end
-				end
-			end
-			
-			def convert_regex_to_lua(reg)
-				"pattern:#{reg.source.gsub("\\","")}"
-			end
-			
-			def grab(ident)
-				case ident
-				when String, Symbol
-					return store.exists(self.hkey(ident.to_s)) ? self.new(ident.to_s) : nil
-				when Hash
-					return match(ident)
-				end
-				nil
-			end
-			
+						
 			def find(ident)
 				grab(ident)
-			end
-			
-			def exists?(k)
-				store.exists(self.hkey(k)) || store.exists(self.reserve_key(k))
 			end
 			
 			def create(ident={})
@@ -402,37 +285,12 @@ module Seabright
 				obj
 			end
 			
-			# def dump
-			# 	out = []
-			# 	each do |obj|
-			# 		out << obj.dump
-			# 	end
-			# 	out.join("\n")
-			# end
-			
 			def use_dbnum(db=0)
 				@dbnum = db
 			end
 			
 			def dbnum
 				@dbnum ||= 0
-			end
-			
-			def find_by_key(k)
-				if store.exists(k) && (cls = store.hget(k,:class))
-					return deep_const_get(cls.to_sym,Object).new(store.hget(k,id_sym(cls)))
-				end
-				nil
-			end
-			
-			def deep_const_get(const,base=nil)
-				if Symbol === const
-					const = const.to_s
-				else
-					const = const.to_str.dup
-				end
-				base ||= const.sub!(/^::/, '') ? Object : self
-				const.split(/::/).inject(base) { |mod, name| mod.const_get(name) }
 			end
 			
 			def save_all
