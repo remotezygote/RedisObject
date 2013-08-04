@@ -6,7 +6,7 @@ class ListEnumerator < Enumerator
 	end
 	
 	def count
-		@base.size
+		@base.count
 	end
 	
 	def member?(obj)
