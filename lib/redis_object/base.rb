@@ -212,7 +212,7 @@ module Seabright
 		def undefine_access(key)
 			return unless self.respond_to?(key.to_sym)
 			metaclass = class << self; self; end
-			metaclass.send(:remove_method, key.to_sym)
+			metaclass.send(:remove_method, key.to_sym) rescue nil
 		end
 		
 		module ClassMethods
