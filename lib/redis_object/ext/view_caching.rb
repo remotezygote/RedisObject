@@ -109,8 +109,8 @@ module Seabright
 					def invalidate_cached_views(*names)
 						Log.verbose "Invalidating cached views: #{names.join(", ")}"
 						run_script(:CachedViewInvalidator, [cached_view_key], names, CachedViewInvalidator)
-						self.class.cache_invalidation_hooks do |hook|
-							hook.call(names)
+						self.class.cache_invalidation_hooks.each do |hook|
+							hook.call(self,names)
 						end
 					end
 					alias_method :invalidate_cached_view, :invalidate_cached_views
