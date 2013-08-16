@@ -140,7 +140,7 @@ module Seabright
 						Log.verbose "Invalidating upstream: #{invalidations(:up).inspect}"
 						backreferences.each do |obj|
 							obj = Object.const_get(obj) if obj.is_a?(String) or obj.is_a?(Symbol)
-							if invalidations(:up).include?(obj.class) and obj.respond_to?(:invalidated_by_other)
+							if (invalidations(:up).include?(obj.class) or invalidations(:up).include?(obj.class.name.to_sym)) and obj.respond_to?(:invalidated_by_other)
 								obj.invalidated_by_other(self,invalidation_chain + [self.hkey])
 							end
 						end
