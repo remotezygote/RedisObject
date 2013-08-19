@@ -334,10 +334,12 @@ module Seabright
 									good = good
 								else
 									good = false
+									break
 								end
 							else
 								if val ~= matchers[n][2] then
 									good = false
+									break
 								end
 							end
 						else
@@ -345,6 +347,7 @@ module Seabright
 								good = good
 							else
 								good = false
+								break
 							end
 						end
 					end
