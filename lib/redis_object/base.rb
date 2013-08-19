@@ -342,7 +342,7 @@ module Seabright
 							end
 						else
 							if matchers[n][2] == '#{NilPattern}' then
-								good = true
+								good = good
 							else
 								good = false
 							end
