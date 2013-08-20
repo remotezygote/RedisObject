@@ -41,18 +41,38 @@ module DumpingSpec
 		
 		it "can dump errthing" do
 			
-			r = RedisObject.dump_everything
+			r = RedisObject.dump_everything(:yml)
 			r.size.should > 100
+			# r = RedisObject.dump_everything(:json)
+			# r.size.should > 100
+			
+		end
+		
+		it "can dump a single class" do
+			
+			r = RedisObject.dump_everything(:yml)
+			r.size.should > 100
+			d = DumpableObject.dump_all(:yml)
+			d.size.should > 100
+			d.size.should < r.size
+			# r = RedisObject.dump_everything(:json)
+			# r.size.should > 100
 			
 		end
 		
 		it "can load back in a dump" do
 			
-			r = RedisObject.dump_everything
+			r = RedisObject.dump_everything(:yml)
 			r.size.should > 100
 			RedisObject.store.flushdb
-			RedisObject.load_dump r
+			RedisObject.load_dump r, :yml
 			DumpableObject.latest.generic_objects.count.should eq(1)
+			
+			# r = RedisObject.dump_everything(:json)
+			# r.size.should > 100
+			# RedisObject.store.flushdb
+			# RedisObject.load_dump r, :json
+			# DumpableObject.latest.generic_objects.count.should eq(1)
 			
 		end
 		

@@ -4,21 +4,32 @@ require 'active_support/core_ext/time/calculations'
 module Seabright
 	class RedisObject
 		
-		def self.dump_everything(file=nil)
+		def self.dump_everything(dump_format=:hash)
 			out = {}
 			ObjectSpace.enum_for(:each_object, class << RedisObject; self; end).each do |cls|
 				unless cls == RedisObject
-					out[cls.name] = {}
-					out[cls.name][:objects] = cls.all.map do |obj|
-						obj.full_hash_dump
-					end
+					out.merge! cls.dump_all(:hash)
 				end
 			end
-			Psych.dump(out)
+			Dumping.format_dump out, dump_format
 		end
 		
-		def self.load_dump(str)
-			Psych.load(str).each do |(k,v)|
+		def self.load_dump(str,dump_format=:hash)
+			case dump_format
+			when :hash
+				load_dump_from_hash str
+			when :yaml, :yml
+				load_dump_from_yaml str
+			# JSON format is not ready yet!
+			# when :json
+			# 	load_dump_from_json str
+			else
+				raise "Unknown dump format."
+			end
+		end
+		
+		def self.load_data(dat)
+			dat.each do |(k,v)|
 				if klass = RedisObject.deep_const_get(k)
 					if v[:objects]
 						v[:objects].each do |o|
@@ -28,6 +39,19 @@ module Seabright
 				end
 			end
 		end
+		
+		def self.load_dump_from_yaml(str)
+			load_data Psych.load(str)
+		end
+		
+		def self.load_dump_from_hash(str)
+			load_data str
+		end
+		
+		# JSON format is not ready yet!
+		# def self.load_dump_from_json(str)
+		# 	load_data Yajl::Parser.new(symbolize_keys: true).parse(str)
+		# end
 		
 		def self.load_object(klass,pkt)
 			Log.debug "Loading a #{klass.name}: #{pkt.inspect}"
@@ -59,6 +83,20 @@ module Seabright
 		# 	end
 		# end
 		
+		def self.format_dump(dump,format=:hash)
+			case format
+			when :hash
+				return dump
+			when :yaml, :yml
+				return Psych.dump(dump)
+			# JSON format is not ready yet!
+			# when :json
+			# 	return Yajl::Encoder.encode(dump)
+			else
+				return dump
+			end
+		end
+		
 		def full_hash_dump
 			store.hgetall(hkey).inject({}) {|acc,(k,v)| acc[k.to_sym] = enforce_format(k,v); acc }.merge(dump_collections)
 		end
@@ -83,7 +121,14 @@ module Seabright
 		
 		module ClassMethods
 			
-			
+			def dump_all(dump_format=:hash)
+				out = {}
+				out[self.name] = {}
+				out[self.name][:objects] = all.map do |obj|
+					obj.full_hash_dump
+				end
+				Dumping.format_dump out, dump_format
+			end
 			
 		end
 		
