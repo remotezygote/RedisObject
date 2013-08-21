@@ -48,6 +48,14 @@ describe RedisObject do
 		obj.first.should_not be_nil
 		obj = ObjectTests::User.find(user_id: /test/)
 		obj.first.should_not be_nil
+		obj = ObjectTests::User.find(user_id: /Test/i)
+		obj.first.should_not be_nil
+		obj = ObjectTests::User.find(user_id: /Test/)
+		obj.first.should be_nil
+		obj = ObjectTests::User.find(user_id: /Test/i, blah: nil)
+		obj.first.should_not be_nil
+		obj = ObjectTests::User.find(user_id: /Test/, blah: nil)
+		obj.first.should be_nil
 	end
 	
 	it "should be found by nil matchers" do
