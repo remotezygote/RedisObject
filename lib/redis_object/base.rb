@@ -289,7 +289,12 @@ module Seabright
 					if val then
 						if ARGV[2]:find('^pattern:') then
 							pattern = ARGV[2]:gsub('^pattern:','')
-							if val:match(pattern) ~= nil then
+							if val:match(pattern) then
+								table.insert(out,itms[i])
+							end
+						elseif ARGV[2]:find('^ipattern:') then
+							pattern = ARGV[2]:gsub('^ipattern:',''):lower()
+							if val:lower():match(pattern) then
 								table.insert(out,itms[i])
 							end
 						else
@@ -331,6 +336,14 @@ module Seabright
 							if matchers[n][2]:find('^pattern:') then
 								pattern = matchers[n][2]:gsub('^pattern:','')
 								if val:match(pattern) then
+									good = good
+								else
+									good = false
+									break
+								end
+							elseif matchers[n][2]:find('^ipattern:') then
+								pattern = matchers[n][2]:gsub('^ipattern:',''):lower()
+								if val:lower():match(pattern) then
 									good = good
 								else
 									good = false
@@ -378,7 +391,7 @@ module Seabright
 			end
 			
 			def convert_regex_to_lua(reg)
-				"pattern:#{reg.source.gsub("\\","")}"
+				"#{reg.casefold? ? "i" : ""}pattern:#{reg.source.gsub("\\","")}"
 			end
 			
 			def grab(ident)
