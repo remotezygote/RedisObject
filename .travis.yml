@@ -3,4 +3,4 @@ rvm:
   - 1.9.3
   - 2.0.0
 env:
-  - "TEST_DB=14"
+  - "TEST_DB=14 CODECLIMATE_REPO_TOKEN=8b629930bc603ff8abbbe21d72914c991d265959abdd284a638e9d8366e9ade5"
