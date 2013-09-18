@@ -97,9 +97,9 @@ describe RedisObject do
 		res.count.should eq(2)
 	end
 
-	it "should not find anything when passing array to find" do
-		obj = ObjectTests::User.find(user_id: ["test","sico"])
-		obj.first.should be_nil
+	it "should raise an ArguemntError when passing array to find" do
+		expect { ObjectTests::User.find(user_id: ["test","sico"]) }.to raise_error(ArgumentError)
+		expect { ObjectTests::User.or_find(user_id: ["test","sico"]) }.not_to raise_error
 	end
 	
 	it "should be found by nil matchers" do

@@ -442,7 +442,7 @@ module Seabright
 					when Regexp
 						convert_regex_to_lua(v)
 					when Array
-						mtchr = :MultiMatcher unless mtchr == :OrMatcher
+						raise ArgumentError.new("An array can only be used with the find_or method") unless use_or
 						inject_key(i.last, v)
 					when NilClass
 						NilPattern
