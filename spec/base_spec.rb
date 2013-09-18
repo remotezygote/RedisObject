@@ -85,6 +85,17 @@ describe RedisObject do
 		res = ObjectTests::User.or_find(stuff: /woo!/i, foo: /Bar!/)
 		res.count.should eq(1)
 	end
+
+	it "should be found by or-matcher using same key" do
+		obj = ObjectTests::User.new("sico")
+		obj.save
+		obj.foo = "bar!"
+		obj2 = ObjectTests::User.new("notsico")
+		obj2.save
+		obj2.foo = "woo!"
+		res = ObjectTests::User.or_find(foo: ["woo!","bar!"])
+		res.count.should eq(2)
+	end
 	
 	it "should be found by nil matchers" do
 		obj = ObjectTests::User.find(blah: nil)

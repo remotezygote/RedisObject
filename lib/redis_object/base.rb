@@ -437,22 +437,39 @@ module Seabright
 				else
 					mtchr = pkt.keys.count > 1 ? :MultiMatcher : :Matcher
 				end
-				pkt = pkt.flatten.map do |i|
-					case i
+				pkt = pkt.flatten.reduce([]) do |i,v|
+					x = case v
 					when Regexp
-						convert_regex_to_lua(i)
+						convert_regex_to_lua(v)
+					when Array
+						inject_key(i.last, v)
 					when NilClass
 						NilPattern
 					else
-						i.to_s
+						v.to_s
 					end
+					i << x
+					i
 				end
-				kys = run_script(mtchr,[plname],pkt)
+				kys = run_script(mtchr,[plname],pkt.flatten)
 				ListEnumerator.new(kys) do |y|
 					kys.each do |k|
 						y << find(k)
 					end
 				end
+			end
+
+			def inject_key(key,list)
+				out = []
+				list.each do |i|
+					if i == list.first
+						out << i
+					else
+						out << key
+						out << i
+					end
+				end
+				out
 			end
 			
 			def convert_regex_to_lua(reg)
