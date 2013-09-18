@@ -369,9 +369,73 @@ module Seabright
 					end
 				end
 				return out".gsub(/\t/,'').freeze
+
+			RedisObject::ScriptSources::OrMatcher = "local itms = redis.call('SMEMBERS',KEYS[1])
+				local out = {}
+				local matchers = {}
+				local matcher = {}
+				local mod
+				for i=1,#ARGV do
+					mod = i % 2
+					if mod == 1 then
+						matcher[1] = ARGV[i]
+					else
+						matcher[2] = ARGV[i]
+						table.insert(matchers,matcher)
+						matcher = {}
+					end
+				end
+
+				local val
+				local good
+				local pattern
+				for i, v in ipairs(itms) do
+					good = false
+					for n=1,#matchers do
+						val = redis.call('HGET',v..'_h',matchers[n][1])
+						if val then
+							if matchers[n][2]:find('^pattern:') then
+								pattern = matchers[n][2]:gsub('^pattern:','')
+								if val:match(pattern) then
+									good = true
+									break
+								else
+									good = good
+								end
+							elseif matchers[n][2]:find('^ipattern:') then
+								pattern = matchers[n][2]:gsub('^ipattern:',''):lower()
+								if val:lower():match(pattern) then
+									good = true
+									break
+								else
+									good = good
+								end
+							else
+								if val == matchers[n][2] then
+									good = true
+								end
+							end
+						else
+							if matchers[n][2] == '#{NilPattern}' then
+								good = good
+							else
+								good = false
+								break
+							end
+						end
+					end
+					if good == true then
+						table.insert(out,itms[i])
+					end
+				end
+				return out".gsub(/\t/,'').freeze
 			
-			def match(pkt)
-				mtchr = pkt.keys.count > 1 ? :MultiMatcher : :Matcher
+			def match(pkt, use_or=false)
+				if use_or
+					mtchr = :OrMatcher
+				else
+					mtchr = pkt.keys.count > 1 ? :MultiMatcher : :Matcher
+				end
 				pkt = pkt.flatten.map do |i|
 					case i
 					when Regexp
@@ -403,9 +467,21 @@ module Seabright
 				end
 				nil
 			end
+
+			def or_grab(ident)
+				case ident
+				when Hash
+					return match(ident, true)
+				end
+				nil
+			end
 			
 			def find(ident)
 				grab(ident)
+			end
+
+			def or_find(ident)
+				or_grab(ident)
 			end
 			
 			def exists?(k)
