@@ -369,25 +369,108 @@ module Seabright
 					end
 				end
 				return out".gsub(/\t/,'').freeze
+
+			RedisObject::ScriptSources::OrMatcher = "local itms = redis.call('SMEMBERS',KEYS[1])
+				local out = {}
+				local matchers = {}
+				local matcher = {}
+				local mod
+				for i=1,#ARGV do
+					mod = i % 2
+					if mod == 1 then
+						matcher[1] = ARGV[i]
+					else
+						matcher[2] = ARGV[i]
+						table.insert(matchers,matcher)
+						matcher = {}
+					end
+				end
+
+				local val
+				local good
+				local pattern
+				for i, v in ipairs(itms) do
+					good = false
+					for n=1,#matchers do
+						val = redis.call('HGET',v..'_h',matchers[n][1])
+						if val then
+							if matchers[n][2]:find('^pattern:') then
+								pattern = matchers[n][2]:gsub('^pattern:','')
+								if val:match(pattern) then
+									good = true
+									break
+								else
+									good = good
+								end
+							elseif matchers[n][2]:find('^ipattern:') then
+								pattern = matchers[n][2]:gsub('^ipattern:',''):lower()
+								if val:lower():match(pattern) then
+									good = true
+									break
+								else
+									good = good
+								end
+							else
+								if val == matchers[n][2] then
+									good = true
+									break
+								end
+							end
+						else
+							if matchers[n][2] == '#{NilPattern}' then
+								good = good
+								break
+							else
+								good = false
+							end
+						end
+					end
+					if good == true then
+						table.insert(out,itms[i])
+					end
+				end
+				return out".gsub(/\t/,'').freeze
 			
-			def match(pkt)
-				mtchr = pkt.keys.count > 1 ? :MultiMatcher : :Matcher
-				pkt = pkt.flatten.map do |i|
-					case i
+			def match(pkt, use_or=false)
+				if use_or
+					mtchr = :OrMatcher
+				else
+					mtchr = pkt.keys.count > 1 ? :MultiMatcher : :Matcher
+				end
+				pkt = pkt.flatten.reduce([]) do |i,v|
+					x = case v
 					when Regexp
-						convert_regex_to_lua(i)
+						convert_regex_to_lua(v)
+					when Array
+						raise ArgumentError.new("An array can only be used with the find_or method") unless use_or
+						inject_key(i.last, v)
 					when NilClass
 						NilPattern
 					else
-						i.to_s
+						v.to_s
 					end
+					i << x
+					i
 				end
-				kys = run_script(mtchr,[plname],pkt)
+				kys = run_script(mtchr,[plname],pkt.flatten)
 				ListEnumerator.new(kys) do |y|
 					kys.each do |k|
 						y << find(k)
 					end
 				end
+			end
+
+			def inject_key(key,list)
+				out = []
+				list.each do |i|
+					if i == list.first
+						out << i
+					else
+						out << key
+						out << i
+					end
+				end
+				out
 			end
 			
 			def convert_regex_to_lua(reg)
@@ -403,9 +486,21 @@ module Seabright
 				end
 				nil
 			end
+
+			def or_grab(ident)
+				case ident
+				when Hash
+					return match(ident, true)
+				end
+				nil
+			end
 			
 			def find(ident)
 				grab(ident)
+			end
+
+			def or_find(ident)
+				or_grab(ident)
 			end
 			
 			def exists?(k)
