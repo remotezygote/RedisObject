@@ -57,6 +57,34 @@ describe RedisObject do
 		obj = ObjectTests::User.find(user_id: /Test/, blah: nil)
 		obj.first.should be_nil
 	end
+
+	it "should be found by or matchers" do
+		obj = ObjectTests::User.new("sico")
+		obj.save
+		obj.foo = "bar!"
+		obj2 = ObjectTests::User.new("notsico")
+		obj2.save
+		obj2.stuff = "woo!"
+		res = ObjectTests::User.or_find(stuff: "woo!", foo: "bar!")
+		res.count.should eq(2)
+	end
+
+	it "should be found by complex or matchers" do
+		obj = ObjectTests::User.new("sico")
+		obj.save
+		obj.foo = "bar!"
+		obj2 = ObjectTests::User.new("notsico")
+		obj2.save
+		obj2.stuff = "woo!"
+		res = ObjectTests::User.or_find(stuff: /Woo!/i, foo: "bar!")
+		res.count.should eq(2)
+		res = ObjectTests::User.or_find(stuff: /Woo!/i, foo: /bar!/i)
+		res.count.should eq(2)
+		res = ObjectTests::User.or_find(stuff: /Woo(.*)/i, foo: /bar!/i)
+		res.count.should eq(2)
+		res = ObjectTests::User.or_find(stuff: /woo!/i, foo: /Bar!/)
+		res.count.should eq(1)
+	end
 	
 	it "should be found by nil matchers" do
 		obj = ObjectTests::User.find(blah: nil)

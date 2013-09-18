@@ -413,14 +413,15 @@ module Seabright
 							else
 								if val == matchers[n][2] then
 									good = true
+									break
 								end
 							end
 						else
 							if matchers[n][2] == '#{NilPattern}' then
 								good = good
+								break
 							else
 								good = false
-								break
 							end
 						end
 					end
