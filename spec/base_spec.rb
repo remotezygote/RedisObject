@@ -96,6 +96,11 @@ describe RedisObject do
 		res = ObjectTests::User.or_find(foo: ["woo!","bar!"])
 		res.count.should eq(2)
 	end
+
+	it "should not find anything when passing array to find" do
+		obj = ObjectTests::User.find(user_id: ["test","sico"])
+		obj.first.should be_nil
+	end
 	
 	it "should be found by nil matchers" do
 		obj = ObjectTests::User.find(blah: nil)

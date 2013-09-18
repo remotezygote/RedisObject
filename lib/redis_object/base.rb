@@ -442,6 +442,7 @@ module Seabright
 					when Regexp
 						convert_regex_to_lua(v)
 					when Array
+						mtchr = :MultiMatcher unless mtchr == :OrMatcher
 						inject_key(i.last, v)
 					when NilClass
 						NilPattern
