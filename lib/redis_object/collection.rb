@@ -273,15 +273,214 @@ module Seabright
 			find k
 		end
 		
-		def match(pkt)
-			Enumerator.new do |y|
-				each do |i|
-					if pkt.all? {|hk,va| i.get(hk)==va }
-						y << i
+		NilPattern = 'nilpattern:'
+		
+		RedisObject::ScriptSources::ColMatcher = "
+			local out = {}
+			local val
+			local pattern
+			for i, v in ipairs(KEYS) do
+				val = redis.call('HGET',v,ARGV[1])
+				if val then
+					if ARGV[2]:find('^pattern:') then
+						pattern = ARGV[2]:gsub('^pattern:','')
+						if val:match(pattern) then
+							table.insert(out,KEYS[i])
+						end
+					elseif ARGV[2]:find('^ipattern:') then
+						pattern = ARGV[2]:gsub('^ipattern:',''):lower()
+						if val:lower():match(pattern) then
+							table.insert(out,KEYS[i])
+						end
+					else
+						if val == ARGV[2] then
+							table.insert(out,KEYS[i])
+						end
+					end
+				else
+					if ARGV[2] == '#{NilPattern}' then
+						table.insert(out,KEYS[i])
 					end
 				end
 			end
+			return out".gsub(/\t/,'').freeze
+		
+		RedisObject::ScriptSources::ColMultiMatcher = "
+			local out = {}
+			local matchers = {}
+			local matcher = {}
+			local mod
+			for i=1,#ARGV do
+				mod = i % 2
+				if mod == 1 then
+					matcher[1] = ARGV[i]
+				else
+					matcher[2] = ARGV[i]
+					table.insert(matchers,matcher)
+					matcher = {}
+				end
+			end
+			local val
+			local good
+			local pattern
+			for i, v in ipairs(KEYS) do
+				good = true
+				for n=1,#matchers do
+					val = redis.call('HGET',v,matchers[n][1])
+					if val then
+						if matchers[n][2]:find('^pattern:') then
+							pattern = matchers[n][2]:gsub('^pattern:','')
+							if val:match(pattern) then
+								good = good
+							else
+								good = false
+								break
+							end
+						elseif matchers[n][2]:find('^ipattern:') then
+							pattern = matchers[n][2]:gsub('^ipattern:',''):lower()
+							if val:lower():match(pattern) then
+								good = good
+							else
+								good = false
+								break
+							end
+						else
+							if val ~= matchers[n][2] then
+								good = false
+								break
+							end
+						end
+					else
+						if matchers[n][2] == '#{NilPattern}' then
+							good = good
+						else
+							good = false
+							break
+						end
+					end
+				end
+				if good == true then
+					table.insert(out,KEYS[i])
+				end
+			end
+			return out".gsub(/\t/,'').freeze
+
+		RedisObject::ScriptSources::ColOrMatcher = "
+			local out = {}
+			local matchers = {}
+			local matcher = {}
+			local mod
+			for i=1,#ARGV do
+				mod = i % 2
+				if mod == 1 then
+					matcher[1] = ARGV[i]
+				else
+					matcher[2] = ARGV[i]
+					table.insert(matchers,matcher)
+					matcher = {}
+				end
+			end
+
+			local val
+			local good
+			local pattern
+			for i, v in ipairs(KEYS) do
+				good = false
+				for n=1,#matchers do
+					val = redis.call('HGET',v,matchers[n][1])
+					if val then
+						if matchers[n][2]:find('^pattern:') then
+							pattern = matchers[n][2]:gsub('^pattern:','')
+							if val:match(pattern) then
+								good = true
+								break
+							else
+								good = good
+							end
+						elseif matchers[n][2]:find('^ipattern:') then
+							pattern = matchers[n][2]:gsub('^ipattern:',''):lower()
+							if val:lower():match(pattern) then
+								good = true
+								break
+							else
+								good = good
+							end
+						else
+							if val == matchers[n][2] then
+								good = true
+								break
+							end
+						end
+					else
+						if matchers[n][2] == '#{NilPattern}' then
+							good = good
+							break
+						else
+							good = false
+						end
+					end
+				end
+				if good == true then
+					table.insert(out,KEYS[i])
+				end
+			end
+			return out".gsub(/\t/,'').freeze
+		
+		def match(pkt, use_or=false)
+			if use_or
+				mtchr = :ColOrMatcher
+			else
+				mtchr = pkt.keys.count > 1 ? :ColMultiMatcher : :ColMatcher
+			end
+			pkt = pkt.flatten.reduce([]) do |i,v|
+				x = case v
+				when Regexp
+					convert_regex_to_lua(v)
+				when Array
+					raise ArgumentError.new("An array can only be used with the find_or method") unless use_or
+					inject_key(i.last, v)
+				when NilClass
+					NilPattern
+				else
+					v.to_s
+				end
+				i << x
+				i
+			end
+			kys = run_script(mtchr,self,pkt.flatten)
+			ListEnumerator.new(kys) do |y|
+				kys.each do |k|
+					y << class_const.find_by_key(k)
+				end
+			end
 		end
+
+		def inject_key(key,list)
+			out = []
+			list.each do |i|
+				if i == list.first
+					out << i
+				else
+					out << key
+					out << i
+				end
+			end
+			out
+		end
+		
+		def convert_regex_to_lua(reg)
+			"#{reg.casefold? ? "i" : ""}pattern:#{reg.source.gsub("\\","")}"
+		end
+		
+		# def match(pkt)
+		# 	Enumerator.new do |y|
+		# 		each do |i|
+		# 			if pkt.all? {|hk,va| i.get(hk)==va }
+		# 				y << i
+		# 			end
+		# 		end
+		# 	end
+		# end
 		
 		def real_at(key)
 			class_const.find_by_key(key)
