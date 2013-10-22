@@ -71,6 +71,7 @@ module Seabright
 		require 'redis_object/storage/adapter'
 		autoload :Redis, 'redis_object/storage/redis'
 		autoload :MySQL, 'redis_object/storage/mysql'
+		autoload :Postgres, 'redis_object/storage/postgres'
 		
 		def store
 			self.class.store
