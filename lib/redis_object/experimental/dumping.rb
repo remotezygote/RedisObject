@@ -110,11 +110,11 @@ module Seabright
 			end.merge(collections: cols)
 		end
 		
-		def to_json
+		def to_json(*discard)
 			Yajl::Encoder.encode(full_hash_dump)
 		end
 		
-		def to_yaml
+		def to_yaml(*discard)
 			Psych.dump(full_hash_dump)
 		end
 		alias_method :to_yml, :to_yaml
