@@ -15,8 +15,7 @@ module IndexSpec
 	
 	TestData = TestValues.inject({}){|acc,(k,v)| acc["a_#{k}".to_sym] = v; acc }
 	
-	# Delicious pizza!
-	class IndexedObject < RedisObject
+	class SortedObject < RedisObject
 		
 		TestValues.keys.each do |type|
 			send(type.to_sym,"a_#{type}".to_sym)
@@ -27,21 +26,45 @@ module IndexSpec
 		
 	end
 	
+	class IndexedObject < RedisObject
+		
+		index :some_text
+		
+	end
+	
 	describe Seabright::Indices do
+		
 		before do
 			RedisObject.store.flushdb
 		end
 		
-		it "indexes on integer field" do
+		it "sorts on integer field" do
 			
 			5.times do
-				obj = IndexedObject.create(a_number: Random.rand(100), a_bool: true)
+				obj = SortedObject.create(a_number: Random.rand(100), a_bool: true)
 			end
 			
-			IndexedObject.indexed(:a_number,3,true).count.should eq(3)
-			IndexedObject.indexed(:a_number,3,true) do |o|
-				o.should be_a(IndexedObject)
+			SortedObject.indexed(:a_number,3,true).count.should eq(3)
+			SortedObject.indexed(:a_number,3,true) do |o|
+				o.should be_a(SortedObject)
 			end
+			
+		end
+				
+		it "indexes on string field" do
+			
+			cnt = 0
+			5.times do
+				obj = IndexedObject.create(some_text: "a" + cnt.to_s)
+				cnt += 1
+			end
+			
+			IndexedObject.find_first(some_text: "a0").should be_a(IndexedObject)
+			IndexedObject.find_first(some_text: "a4").should be_a(IndexedObject)
+			IndexedObject.find_first(some_text: "a5").should eq(nil)
+			# IndexedObject.indexed(:a_number,3,true) do |o|
+			# 	o.should be_a(IndexedObject)
+			# end
 			
 		end
 				

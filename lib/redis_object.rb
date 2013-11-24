@@ -8,6 +8,7 @@ require "redis_object/ext/list_enumerator"
 
 require "redis_object/ext/script_cache"
 require "redis_object/base"
+require "redis_object/matchers"
 require "redis_object/inheritance_tracking"
 require "redis_object/storage"
 require "redis_object/keys"
@@ -28,6 +29,7 @@ module Seabright
 		
 		include Seabright::Filters
 		include Seabright::ObjectBase
+		include Seabright::Matchers
 		include Seabright::InheritanceTracking
 		include Seabright::CachedScripts
 		include Seabright::Storage

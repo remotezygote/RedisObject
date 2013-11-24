@@ -242,7 +242,7 @@ module Seabright
 		RedisObject::ScriptSources::RevScript = "redis.call('ZINTERSTORE', KEYS[1], 2, KEYS[2], KEYS[3], 'WEIGHTS', 1, 0)\nlocal keys = redis.call('ZREVRANGE', KEYS[1], 0, KEYS[4])\nredis.call('DEL', KEYS[1])\nreturn keys".freeze
 		
 		def keys_by_index(idx,num=-1,reverse=false)
-			keys = run_script(reverse ? :RevScript : :FwdScript, [temp_key, index_key(idx), key, num])
+			keys = run_script(reverse ? :RevScript : :FwdScript, [temp_key, sort_index_key(idx), key, num])
 			ListEnumerator.new(keys) do |y|
 				keys.each do |member|
 					y << member
@@ -250,8 +250,8 @@ module Seabright
 			end
 		end
 		
-		def index_key(idx)
-			class_const.index_key(idx)
+		def sort_index_key(idx)
+			class_const.sort_index_key(idx)
 		end
 		
 		def item_key(k)
