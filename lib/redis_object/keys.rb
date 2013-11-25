@@ -2,7 +2,7 @@ module Seabright
 	module Keys
 		
 		def key(ident = id)
-			"#{self.class.cname}:#{ident.gsub(/^.*:/,'').gsub(/_h$/,'')}"
+			"#{self.class.cname}:#{clean_id(ident)}"
 		end
 		
 		def reserve_key(ident = id)
@@ -20,7 +20,7 @@ module Seabright
 		module ClassMethods
 			
 			def key(ident=nil)
-				"#{cname}#{ident ? ":#{ident.gsub(/^.*:/,'').gsub(/_h$/,'')}" : ""}"
+				"#{cname}#{ident ? ":#{clean_id(ident)}" : ""}"
 			end
 			
 			def reserve_key(ident=nil)

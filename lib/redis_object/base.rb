@@ -2,7 +2,7 @@ module Seabright
 	module ObjectBase
 		
 		def initialize(ident={})
-			if ident && (ident.class == String || (ident.class == Symbol && (ident = ident.to_s)))# && ident.gsub!(/.*:/,'') && ident.length > 0
+			if ident && (ident.class == String || (ident.class == Symbol && (ident = ident.to_s)))
 				load(ident.dup)
 			elsif ident && ident.class == Hash
 				ident[id_sym] ||= generate_id
@@ -25,23 +25,22 @@ module Seabright
 			self.class.reserve(k)
 		end
 		
-		# oved this to the dumper module in experimental - remove when it gets to base
-		# def to_json
-		# 	Yajl::Encoder.encode(actual)
-		# end
-		
 		def id
 			@id || get(id_sym) || set(id_sym, generate_id)
 		end
 		
 		def load(o_id)
-			@id = o_id
+			@id = clean_id(o_id)
 			true
+		end
+		
+		def clean_id(i)
+			self.class.clean_id(i)
 		end
 		
 		def save
 			set(:class, self.class.name)
-			set(id_sym,id.gsub(/.*:/,''))
+			set(id_sym,clean_id(id))
 			set(:key, key)
 			store.sadd(self.class.plname, key)
 			store.del(reserve_key)
@@ -217,6 +216,10 @@ module Seabright
 		
 		module ClassMethods
 			
+			def clean_id(i)
+				i.to_s.gsub(/.*:/,'').gsub(/_h$/,'')
+			end
+			
 			def generate_id
 				v = new_id
 				while exists?(v) do
@@ -260,7 +263,7 @@ module Seabright
 			
 			def recollect!
 				store.keys("#{name}:*_h").each do |ky|
-					store.sadd(plname,ky.gsub(/_h$/,''))
+					store.sadd(plname, clean_id(ky))
 				end
 			end
 			
