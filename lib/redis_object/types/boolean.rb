@@ -3,7 +3,7 @@ module Seabright
 		module BooleanType
 			
 			def format_boolean(val)
-				val=="true"
+				val===true or val=="true"
 			end
 			
 			def save_boolean(val)

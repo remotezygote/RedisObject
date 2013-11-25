@@ -3,6 +3,7 @@ module Seabright
 		module ArrayType
 			
 			def format_array(val)
+				return val if val.is_a?(Array)
 				val ? Yajl::Parser.new(:symbolize_keys => true).parse(val) : []
 			end
 			
