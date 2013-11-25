@@ -4,6 +4,7 @@ group :test do
 	gem 'rake'
 	gem 'rspec'
 	gem 'fuubar'
+	gem 'simplecov'
 end
 
 group :development, :test do
