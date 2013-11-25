@@ -23,7 +23,9 @@ module Seabright
 					end
 					
 					def set_index(k,v,hkey)
-						store.srem(self.class.index_key(k,get(k)), hkey)
+						if cur = get(k)
+							store.srem(self.class.index_key(k,cur), hkey)
+						end
 						store.sadd(self.class.index_key(k,v), hkey)
 					end
 					
@@ -76,7 +78,7 @@ module Seabright
 			end
 			
 			def index_key(k,v)
-				"#{self.plname}::#{k}::#{v}"
+				"#{self.plname}::#{k}::field_index::#{v}"
 			end
 			
 			def sort_index_key(idx)
@@ -102,9 +104,13 @@ module Seabright
 			end
 			
 			def reindex(k)
-				store.del index_key(k)
+				store.keys(index_key(k,"*")).each do |k|
+					store.del k
+				end
 				all.each do |obj|
-					obj.set(k,obj.get(k))
+					if v = obj.get(k)
+						set_index(k, v, obj.hkey)
+					end
 				end
 			end
 			
@@ -124,7 +130,6 @@ module Seabright
 		
 		def self.included(base)
 			base.extend(ClassMethods)
-			base.send(:index, base.id_sym)
 		end
 		
 	end
