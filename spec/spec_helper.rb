@@ -6,15 +6,9 @@ require 'test/unit'
 require 'rspec'
 
 require 'simplecov'
-require 'coveralls'
 
-require "codeclimate-test-reporter"
-CodeClimate::TestReporter.start
+SimpleCov.formatter = SimpleCov::Formatter::HTMLFormatter
 
-SimpleCov.formatter = SimpleCov::Formatter::MultiFormatter[
-  SimpleCov::Formatter::HTMLFormatter,
-  Coveralls::SimpleCov::Formatter
-]
 SimpleCov.start do
 	add_filter "_spec.rb"
 	# add_filter "/experimental/"
