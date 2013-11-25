@@ -1,4 +1,15 @@
 module Seabright
+	
+	class RedisObject
+		
+		def self.reindex_everything!
+			RedisObject.child_classes.each do |cls|
+				cls.reindex_all_indices!
+			end
+		end
+		
+	end
+	
 	module Indices
 		
 		def index_key(idx)
@@ -114,7 +125,7 @@ module Seabright
 				end
 			end
 			
-			def reindex_all_indexes!
+			def reindex_all_indices!
 				indices.each do |k|
 					reindex(k)
 				end

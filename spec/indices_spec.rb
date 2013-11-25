@@ -63,7 +63,13 @@ module IndexSpec
 			IndexedObject.find_first(some_text: "a4").should be_a(IndexedObject)
 			IndexedObject.find_first(some_text: "a5").should eq(nil)
 			
-			IndexedObject.reindex_all_indexes!
+			IndexedObject.reindex_all_indices!
+			
+			IndexedObject.find_first(some_text: "a0").should be_a(IndexedObject)
+			IndexedObject.find_first(some_text: "a4").should be_a(IndexedObject)
+			IndexedObject.find_first(some_text: "a5").should eq(nil)
+			
+			RedisObject.reindex_everything!
 			
 			IndexedObject.find_first(some_text: "a0").should be_a(IndexedObject)
 			IndexedObject.find_first(some_text: "a4").should be_a(IndexedObject)
