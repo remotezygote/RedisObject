@@ -22,7 +22,6 @@ module BenchmarkSpec
 		end
 		
 		def aggregate
-			sleep 0.1
 			42.7
 		end
 		benchmark :aggregate
