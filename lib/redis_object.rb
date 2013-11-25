@@ -30,6 +30,7 @@ module Seabright
 		include Seabright::Filters
 		include Seabright::ObjectBase
 		include Seabright::Matchers
+		include Seabright::Indices
 		include Seabright::InheritanceTracking
 		include Seabright::CachedScripts
 		include Seabright::Storage
@@ -38,7 +39,6 @@ module Seabright
 		include Seabright::DefaultValues
 		include Seabright::Collections
 		include Seabright::Triggers
-		include Seabright::Indices
 		include Seabright::Views
 		include Seabright::ViewCaching
 		include Seabright::Timestamps

@@ -78,7 +78,7 @@ module Seabright
 			end
 			
 			def index_key(k,v)
-				"#{self.plname}::#{k}::field_index::#{v}"
+				"#{self.plname}::field_index::#{k}::#{v}"
 			end
 			
 			def sort_index_key(idx)
@@ -104,13 +104,19 @@ module Seabright
 			end
 			
 			def reindex(k)
-				store.keys(index_key(k,"*")).each do |k|
-					store.del k
+				store.keys(index_key(k,"*")).each do |ik|
+					store.del ik
 				end
 				all.each do |obj|
 					if v = obj.get(k)
-						set_index(k, v, obj.hkey)
+						obj.set_index(k, v, obj.hkey)
 					end
+				end
+			end
+			
+			def reindex_all_indexes!
+				indices.each do |k|
+					reindex(k)
 				end
 			end
 			
