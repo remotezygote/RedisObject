@@ -13,7 +13,6 @@ module TriggerSpec
 			
 			(1..5).each do |n|
 				TimestampedObject.create(n.to_s)
-				sleep Random.rand(1.0)
 			end
 			
 			TimestampedObject.recently_created.first.id.should eq("5")
