@@ -40,7 +40,10 @@ module Seabright
 		
 		def save_format(k,v)
 			if sym = type_filter_for(:save,k)
+				puts "Saving as #{sym}" if $output_save_type
 				return send(sym,v)
+			else
+				puts "Saving raw: #{k}" if $output_save_type
 			end
 			v
 		end
@@ -48,6 +51,7 @@ module Seabright
 		module ClassMethods
 			
 			def method_missing(sym,*args,&block)
+				puts "Incoming: #{sym}"
 				if als = Types.type_aliases[sym]
 					org = sym
 					sym = als
@@ -56,6 +60,7 @@ module Seabright
 					register_type(sym,org)
 					send(sym,*args,&block)
 				else
+					puts "Supering: #{sym}"
 					super(sym,*args,&block)
 				end
 			end
@@ -136,30 +141,19 @@ module Seabright
 			
 			def intercept_for_typing!
 				return if @intercepted_for_typing
-				self.class_eval do
-					
-					alias_method :untyped_get, :get unless method_defined?(:untyped_get)
-					def get(k)
-						enforce_format(k,untyped_get(k))
-					end
-					
-					alias_method :untyped_mset, :mset unless method_defined?(:untyped_mset)
-					def mset(dat)
-						dat.merge!(dat) {|k,v1,v2| save_format(k,v1) }
-						untyped_mset(dat)
-					end
-					
-					alias_method :untyped_set, :set unless method_defined?(:untyped_set)
-					def set(k,v)
-						untyped_set(k,save_format(k,v))
-					end
-					
-					alias_method :untyped_setnx, :setnx unless method_defined?(:untyped_setnx)
-					def setnx(k,v)
-						untyped_setnx(k,save_format(k,v))
-					end
-					
+				
+				filter_gets do |obj, k, v|
+					obj.enforce_format(k, v)
 				end
+				
+				filter_sets do |obj, k, v|
+					[k, obj.save_format(k,v)]
+				end
+				
+				filter_msets do |obj, dat|
+					dat.merge!(dat) {|k,v1,v2| obj.save_format(k, v1) }
+				end
+				
 				@intercepted_for_typing = true
 			end
 			

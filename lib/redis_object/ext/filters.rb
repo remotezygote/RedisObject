@@ -7,41 +7,46 @@ module Seabright
 				return if @intercept_for_filters
 				self.class_eval do
 					
-					def filtered_method_call(method,*args)
-						if filters = self.class.filters_for(method)
+					filter_gets do |obj, k, v|
+						if filters = self.class.filters_for(:get)
 							filters.each do |f|
-								next unless args.is_a?(Array) and !args[0].nil?
-								args = send(f,*args)
+								out = obj.send(f,v)
+							end
+						end
+						out
+					end
+					
+					filter_sets do |obj, k, v|
+						if filters = self.class.filters_for(:set)
+							filters.each do |f|
+								args = obj.send(f,k,v)
 							end
 						end
 						unless args.is_a?(Array)
 							args = [nil,nil]
 						end
-						send("unfiltered_#{method.to_s}".to_sym,*args)
+						args
 					end
 					
-					alias_method :unfiltered_get, :get unless method_defined?(:unfiltered_get)
-					def get(k)
-						filtered_method_call(:get,k)
-					end
-					
-					alias_method :unfiltered_set, :set unless method_defined?(:unfiltered_set)
-					def set(k,v)
-						filtered_method_call(:set,k,v)
-					end
-					
-					alias_method :unfiltered_setnx, :setnx unless method_defined?(:unfiltered_setnx)
-					def setnx(k,v)
-						filtered_method_call(:setnx,k,v)
-					end
-					
+					# filter_msets do |dat|
+					# 	if filters = self.class.filters_for(method)
+					# 		filters.each do |f|
+					# 			next unless args.is_a?(Array) and !args[0].nil?
+					# 			args = send(f,*args)
+					# 		end
+					# 	end
+					# 	unless args.is_a?(Array)
+					# 		args = [nil,nil]
+					# 	end
+					# 	args
+					# end
+					# 
 				end
 				@intercept_for_filters = true
 			end
 			
 			def set_filter(filter)
 				filter_method(:set,filter)
-				filter_method(:setnx,filter)
 			end
 			
 			def get_filter(filter)

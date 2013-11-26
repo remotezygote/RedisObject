@@ -117,16 +117,6 @@ module Seabright
 			@collection_names ||= store.smembers(hkey_col)
 		end
 		
-		def mset(dat)
-			dat.select! {|k,v| !collections[k.to_s] }
-			super(dat)
-		end
-		
-		def set(k,v)
-			@data ? super(k,v) : has_collection?(k) ? get_collection(k.to_s).replace(v) : super(k,v)
-			v
-		end
-		
 		def collect_type_by_key(col,*keys)
 			collect = get_collection(col)
 			keys.each do |k|
@@ -135,6 +125,37 @@ module Seabright
 		end
 		
 		module ClassMethods
+			
+			def intercept_sets_for_collecting!
+				return if @intercepted_sets_for_collecting
+				self.class_eval do
+					
+					filter_gets do |obj, k, v|
+						puts "Looking for collection: #{k}"
+						if obj.has_collection?(k)
+							return obj.get_collection(k)
+						elsif obj.has_collection?(pk = k.to_s.pluralize)
+							return obj.get_collection(pk).first
+						end
+						puts "Not found."
+						v
+					end
+					
+					filter_sets do |obj, k, v|
+						if obj.has_collection?(k)
+							obj.get_collection(k.to_s).replace(v)
+							return [nil,nil]
+						end
+						[k,v]
+					end
+					
+					filter_msets do |obj, dat|
+						dat.select {|k,v| !obj.collections[k.to_s] }
+					end
+					
+				end
+				@intercepted_sets_for_collecting = true
+			end
 			
 			def hkey_col(ident = nil)
 				"#{hkey(ident)}:collections"
@@ -168,16 +189,6 @@ module Seabright
 				store.srem hkey_col, name
 			end
 			
-			def get(k)
-				if has_collection?(k)
-					get_collection(k)
-				elsif has_collection?(pk = k.to_s.pluralize)
-					get_collection(pk).first
-				else
-					super(k)
-				end
-			end
-			
 			def has_collection?(name)
 				store.sismember(hkey_col,name.to_s)
 			end
@@ -195,6 +206,7 @@ module Seabright
 		
 		def self.included(base)
 			base.extend(ClassMethods)
+			base.intercept_sets_for_collecting!
 		end
 		
 	end

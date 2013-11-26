@@ -22,17 +22,6 @@ module Seabright
 				return if @intercepted_sets_for_indices
 				self.class_eval do
 					
-					def indexed_set_method(meth,k,v)
-						ret = send("unindexed_#{meth}".to_sym,k,v)
-						if self.class.has_index?(k)
-							set_index k, v, hkey
-						end
-						if self.class.has_sort_index?(k)
-							set_sort_index k, v, hkey
-						end
-						ret
-					end
-					
 					def set_index(k,v,hkey)
 						if cur = get(k)
 							store.srem(self.class.index_key(k,cur), hkey)
@@ -45,25 +34,24 @@ module Seabright
 						store.zadd(self.class.sort_index_key(k), score_format(k,v), hkey)
 					end
 					
-					alias_method :unindexed_set, :set unless method_defined?(:unindexed_set)
-					def set(k,v)
-						indexed_set_method(:set,k,v)
+					filter_sets do |ob, k, v|
+						if self.class.has_index?(k)
+							obj.set_index k, v, obj.hkey
+						end
+						if self.class.has_sort_index?(k)
+							obj.set_sort_index k, v, obj.hkey
+						end
+						[k, v]
 					end
 					
-					alias_method :unindexed_setnx, :setnx unless method_defined?(:unindexed_setnx)
-					def setnx(k,v)
-						indexed_set_method(:setnx,k,v)
-					end
-					
-					alias_method :unindexed_mset, :mset unless method_defined?(:unindexed_mset)
-					def mset(dat)
-						dat.select {|k,v| self.class.has_index?(k) }.each do |k,v|
-							set_index k, v, hkey
+					filter_msets do |obj, dat|
+						dat.each do |k,v|
+							obj.set_index(k, v, obj.hkey) if self.class.has_index?(k)
 						end
-						dat.select {|k,v| self.class.has_sort_index?(k) }.each do |k,v|
-							set_sort_index k, v, hkey
+						dat.each do |k,v|
+							obj.set_sort_index(k, v, obj.hkey) if self.class.has_sort_index?(k)
 						end
-						unindexed_mset(dat)
+						[k, v]
 					end
 					
 				end

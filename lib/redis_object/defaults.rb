@@ -11,12 +11,11 @@ module Seabright
 				return if @intercepted_for_defaults
 				self.class_eval do
 					
-					alias_method :undefaulted_get, :get unless method_defined?(:undefaulted_get)
-					def get(k)
-						if !is_set?(k) && (d = self.class.default_vals[k.to_sym]) && !d.nil?
+					filter_gets do |obj, k, v|
+						if !obj.is_set?(k) && (d = self.class.default_vals[k.to_sym]) && !d.nil?
 							return d
 						end
-						undefaulted_get(k)
+						v
 					end
 					
 				end
