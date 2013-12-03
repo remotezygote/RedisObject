@@ -10,7 +10,7 @@ module CollectionSpec
 	describe Seabright::Collections do
 		before do
 			
-			RedisObject.store.flushdb
+			SpecHelper.flushdb
 			@granddad = GrandDad.create("gramps")
 			@dad = Daddy.create("dad")
 			@son = Son.create("sun")
@@ -140,7 +140,7 @@ module CollectionSpec
 				@dad << Son.create
 			end
 			
-			# @dad.sons.indexed(:created_at,3,true).count.should eq(3)
+			@dad.sons.indexed(:created_at,3,true).count.should eq(3)
 			
 			Son.indexed(:created_at,3,true).count.should eq(3)
 			

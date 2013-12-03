@@ -12,10 +12,11 @@ module Seabright
 				self.class_eval do
 					
 					filter_gets do |obj, k, v|
-						if !obj.is_set?(k) && (d = self.class.default_vals[k.to_sym]) && !d.nil?
-							return d
+						if !obj.is_set?(k) && (d = obj.class.default_vals[k.to_sym]) && !d.nil?
+							d
+						else
+							v
 						end
-						v
 					end
 					
 				end

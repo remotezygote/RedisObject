@@ -3,7 +3,9 @@ module Seabright
 		
 		def update_timestamps
 			# return unless self.class.time_matters?
-			set(:created_at, Time.now) if !is_set?(:created_at)
+			if !is_set?(:created_at)
+				set(:created_at, Time.now)
+			end
 			set(:updated_at, Time.now)
 		end
 		

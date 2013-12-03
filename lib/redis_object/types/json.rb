@@ -8,6 +8,7 @@ module Seabright
 			end
 			
 			def save_json(val)
+				return val if val.is_a?(String)
 				Yajl::Encoder.encode(val)
 			end
 			

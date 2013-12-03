@@ -33,7 +33,7 @@ module ViewSpec
 	describe Seabright::Views do
 		
 		before do
-			RedisObject.store.flushdb
+			SpecHelper.flushdb
 			@obj = ViewedObject.create(TestData)
 		end
 		

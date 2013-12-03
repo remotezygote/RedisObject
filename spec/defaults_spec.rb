@@ -28,7 +28,7 @@ module DefaultSpec
 	
 	describe Seabright::DefaultValues do
 		before do
-			RedisObject.store.flushdb
+			SpecHelper.flushdb
 		end
 		
 		it "returns default value" do

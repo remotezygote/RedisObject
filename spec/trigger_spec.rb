@@ -30,7 +30,7 @@ module TriggerSpec
 	
 	describe Seabright::Triggers do
 		before do
-			RedisObject.store.flushdb
+			SpecHelper.flushdb
 		end
 		
 		it "triggers on a call" do

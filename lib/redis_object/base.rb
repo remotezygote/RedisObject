@@ -71,7 +71,13 @@ module Seabright
 		alias_method :actual, :raw
 		
 		def get(k)
-			cached_hash_values[k.to_s] ||= _get(k)
+			filter_gotten_value(k, (cached_hash_values[k.to_s] || _get(k)))
+		end
+		
+		def filter_gotten_value(k,v)
+			self.class.get_filters.inject(v) do |acc, filter|
+				filter.call(self, k, acc)
+			end
 		end
 		
 		def _get(k)
@@ -80,9 +86,7 @@ module Seabright
 			elsif v = store.hget(hkey, k.to_s)
 				define_setter_getter(k)
 			end
-			self.class.get_filters.inject(v) do |acc, filter|
-				filter.call(self, k, acc)
-			end
+			v
 		end
 		
 		def [](k)
@@ -121,7 +125,7 @@ module Seabright
 		
 		def set(k,v)
 			(k,v) = self.class.set_filters.inject([k,v]) do |acc,filter|
-				filter.call(self,*acc) unless acc[0].nil?
+				filter.call(self,*acc) unless acc.nil? or acc[0].nil?
 			end
 			return nil if k.nil?
 			return set_ref(k,v) if v.is_a?(RedisObject)
@@ -228,7 +232,7 @@ module Seabright
 		module ClassMethods
 			
 			def action_filters
-				@action_filters ||= {}
+				@@action_filters ||= {}
 			end
 			
 			def set_filters

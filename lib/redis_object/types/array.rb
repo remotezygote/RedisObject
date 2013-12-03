@@ -8,6 +8,7 @@ module Seabright
 			end
 			
 			def save_array(val)
+				return val if val.is_a?(String)
 				Yajl::Encoder.encode(val)
 			end
 			

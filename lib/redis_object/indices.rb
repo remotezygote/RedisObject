@@ -34,11 +34,11 @@ module Seabright
 						store.zadd(self.class.sort_index_key(k), score_format(k,v), hkey)
 					end
 					
-					filter_sets do |ob, k, v|
-						if self.class.has_index?(k)
+					filter_sets do |obj, k, v|
+						if obj.class.has_index?(k)
 							obj.set_index k, v, obj.hkey
 						end
-						if self.class.has_sort_index?(k)
+						if obj.class.has_sort_index?(k)
 							obj.set_sort_index k, v, obj.hkey
 						end
 						[k, v]
@@ -46,12 +46,12 @@ module Seabright
 					
 					filter_msets do |obj, dat|
 						dat.each do |k,v|
-							obj.set_index(k, v, obj.hkey) if self.class.has_index?(k)
+							obj.set_index(k, v, obj.hkey) if obj.class.has_index?(k)
 						end
 						dat.each do |k,v|
-							obj.set_sort_index(k, v, obj.hkey) if self.class.has_sort_index?(k)
+							obj.set_sort_index(k, v, obj.hkey) if obj.class.has_sort_index?(k)
 						end
-						[k, v]
+						dat
 					end
 					
 				end
@@ -135,6 +135,7 @@ module Seabright
 		
 		def self.included(base)
 			base.extend(ClassMethods)
+			base.intercept_sets_for_indices!
 		end
 		
 	end

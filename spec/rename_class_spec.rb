@@ -10,7 +10,7 @@ module RenameClassSpec
 
 	describe Seabright::Storage::Redis, "#rename_class" do
 		before do
-			RedisObject.store.flushdb
+			SpecHelper.flushdb
 
 			mozzarella = Topping.create(:mozzarella)
 			basil      = Topping.create(:basil)

@@ -8,24 +8,23 @@ module Seabright
 				self.class_eval do
 					
 					filter_gets do |obj, k, v|
-						if filters = self.class.filters_for(:get)
-							filters.each do |f|
-								out = obj.send(f,v)
+						if filters = obj.class.filters_for(:get)
+							return filters.inject(v) do |acc,f|
+								obj.send(f,acc)
 							end
+						else
+							v
 						end
-						out
 					end
 					
 					filter_sets do |obj, k, v|
-						if filters = self.class.filters_for(:set)
-							filters.each do |f|
-								args = obj.send(f,k,v)
+						if filters = obj.class.filters_for(:set)
+							filters.inject([k,v]) do |acc,f|
+								obj.send(f,*acc)
 							end
+						else
+							[k,v]
 						end
-						unless args.is_a?(Array)
-							args = [nil,nil]
-						end
-						args
 					end
 					
 					# filter_msets do |dat|

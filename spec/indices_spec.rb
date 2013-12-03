@@ -35,7 +35,7 @@ module IndexSpec
 	describe Seabright::Indices do
 		
 		before do
-			RedisObject.store.flushdb
+			SpecHelper.flushdb
 		end
 		
 		it "sorts on integer field" do

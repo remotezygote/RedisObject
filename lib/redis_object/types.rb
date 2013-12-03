@@ -40,10 +40,7 @@ module Seabright
 		
 		def save_format(k,v)
 			if sym = type_filter_for(:save,k)
-				puts "Saving as #{sym}" if $output_save_type
 				return send(sym,v)
-			else
-				puts "Saving raw: #{k}" if $output_save_type
 			end
 			v
 		end
@@ -51,7 +48,6 @@ module Seabright
 		module ClassMethods
 			
 			def method_missing(sym,*args,&block)
-				puts "Incoming: #{sym}"
 				if als = Types.type_aliases[sym]
 					org = sym
 					sym = als
@@ -60,7 +56,6 @@ module Seabright
 					register_type(sym,org)
 					send(sym,*args,&block)
 				else
-					puts "Supering: #{sym}"
 					super(sym,*args,&block)
 				end
 			end

@@ -13,7 +13,7 @@ module FilterSpec
 	
 	describe Seabright::Filters do
 		before do
-			RedisObject.store.flushdb
+			SpecHelper.flushdb
 		end
 		
 		it "modifies set and gets correctly" do

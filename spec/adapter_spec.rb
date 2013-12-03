@@ -22,7 +22,7 @@ describe RedisObject do
 	it "can dump to a file" do
 		obj = ObjectTests::User.create("test")
 		RedisObject.dump_stores_to_files("/tmp")
-		RedisObject.store.flushdb
+		SpecHelper.flushdb
 	end
 	
 	it "can restore from a file" do

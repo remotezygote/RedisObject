@@ -7,7 +7,7 @@ module ScriptCacheSpec
 	describe Seabright::CachedScripts do
 		before do
 			
-			RedisObject.store.flushdb
+			SpecHelper.flushdb
 			
 			(1..5).each do |n|
 				GenericObject.create(n.to_s)
