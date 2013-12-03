@@ -6,7 +6,7 @@ module TriggerSpec
 	
 	describe Seabright::Triggers do
 		before do
-			RedisObject.store.flushdb
+			SpecHelper.flushdb
 		end
 		
 		it "should get recently created object" do

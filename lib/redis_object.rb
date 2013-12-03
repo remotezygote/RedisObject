@@ -34,11 +34,11 @@ module Seabright
 		include Seabright::CachedScripts
 		include Seabright::Storage
 		include Seabright::Keys
-		include Seabright::Types
 		include Seabright::DefaultValues
-		include Seabright::Collections
-		include Seabright::Triggers
 		include Seabright::Indices
+		include Seabright::Collections
+		include Seabright::Types
+		include Seabright::Triggers
 		include Seabright::Views
 		include Seabright::ViewCaching
 		include Seabright::Timestamps

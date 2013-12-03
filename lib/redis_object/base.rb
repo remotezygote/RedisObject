@@ -71,7 +71,13 @@ module Seabright
 		alias_method :actual, :raw
 		
 		def get(k)
-			cached_hash_values[k.to_s] ||= _get(k)
+			filter_gotten_value(k, (cached_hash_values[k.to_s] || _get(k)))
+		end
+		
+		def filter_gotten_value(k,v)
+			self.class.get_filters.inject(v) do |acc, filter|
+				filter.call(self, k, acc)
+			end
 		end
 		
 		def _get(k)
@@ -92,6 +98,9 @@ module Seabright
 		end
 		
 		def mset(dat)
+			dat = self.class.mset_filters.inject(dat) do |acc,filter|
+				filter.call(self, acc)
+			end
 			store.hmset(hkey, *(dat.inject([]){|acc,(k,v)| acc << [k,v] }.flatten))
 			cached_hash_values.merge!(dat)
 			dat.each do |k,v|
@@ -115,6 +124,9 @@ module Seabright
 		end
 		
 		def set(k,v)
+			(k,v) = self.class.set_filters.inject([k,v]) do |acc,filter|
+				filter.call(self,*acc) unless acc.nil? or acc[0].nil?
+			end
 			return nil if k.nil?
 			return set_ref(k,v) if v.is_a?(RedisObject)
 			store.hset(hkey, k.to_s, v.to_s)
@@ -151,6 +163,9 @@ module Seabright
 		end
 		
 		def setnx(k,v)
+			(k,v) = self.class.set_filters.inject([k,v]) do |acc,filter|
+				filter.call(self,*acc)
+			end
 			if success = store.hsetnx(hkey, k.to_s, v.to_s)
 				cached_hash_values[k.to_s] = v
 				define_setter_getter(k)
@@ -215,6 +230,34 @@ module Seabright
 		end
 		
 		module ClassMethods
+			
+			def action_filters
+				@@action_filters ||= {}
+			end
+			
+			def set_filters
+				action_filters[:set] ||= []
+			end
+			
+			def filter_sets(&block)
+				set_filters << block
+			end
+			
+			def mset_filters
+				action_filters[:mset] ||= []
+			end
+			
+			def filter_msets(&block)
+				mset_filters << block
+			end
+			
+			def get_filters
+				action_filters[:get] ||= []
+			end
+			
+			def filter_gets(&block)
+				get_filters << block
+			end
 			
 			def clean_id(i)
 				i.to_s.gsub(/.*:/,'').gsub(/_h$/,'')

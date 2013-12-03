@@ -1,8 +1,15 @@
 module Seabright
+	
+	def RedisObject.constant_lookups
+		@constant_lookups ||= {}
+	end
+	
 	module InheritanceTracking
 		
 		module ClassMethods
+			
 			def inherited(child_class)
+				RedisObject.constant_lookups[child_class.name.to_s.split("::").last.to_sym] ||= child_class
 				child_classes_set.add(child_class)
 			end
 

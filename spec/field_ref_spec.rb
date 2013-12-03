@@ -8,7 +8,7 @@ module FieldRefSpec
 	describe RedisObject do
 		
 		before do
-			RedisObject.store.flushdb
+			SpecHelper.flushdb
 			@dad = Dad.create("daddy")
 			@son = Son.create("sonny")
 			@dad.stepson = @son

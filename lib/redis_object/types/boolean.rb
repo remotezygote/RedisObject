@@ -3,11 +3,11 @@ module Seabright
 		module BooleanType
 			
 			def format_boolean(val)
-				val===true or val=="true"
+				(val === true or val === "true") ? true : false
 			end
 			
 			def save_boolean(val)
-				val === true ? "true" : "false"
+				(val === true or val === "true") ? "true" : "false"
 			end
 			
 			def score_boolean(val)

@@ -53,7 +53,7 @@ module ViewCachingSpec
 	describe Seabright::ViewCaching do
 		
 		before do
-			RedisObject.store.flushdb
+			SpecHelper.flushdb
 			@obj = TypedObject.create(TestData)
 			@dad = Container.create("daddy")
 			@dad << @obj

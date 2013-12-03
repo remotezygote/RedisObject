@@ -26,7 +26,7 @@ module TypeSpec
 	
 	describe Seabright::Types do
 		before do
-			RedisObject.store.flushdb
+			SpecHelper.flushdb
 		end
 	
 		it "can be created via data packet" do

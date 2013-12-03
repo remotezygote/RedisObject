@@ -16,9 +16,9 @@ module DumpingSpec
 		
 	end
 	
-	describe Seabright::Triggers do
+	describe Seabright::Dumping do
 		before do
-			RedisObject.store.flushdb
+			SpecHelper.flushdb
 			5.times do
 				d = DumpableObject.create(phone: Random.rand(100)*555, mailed: true, canceled_at: Time.now)
 				d << GenericObject.create(complex: {woot: true, ohnoes: false})
@@ -64,13 +64,13 @@ module DumpingSpec
 			
 			r = RedisObject.dump_everything(:yml)
 			r.size.should > 100
-			RedisObject.store.flushdb
+			SpecHelper.flushdb
 			RedisObject.load_dump r, :yml
 			DumpableObject.latest.generic_objects.count.should eq(1)
 			
 			# r = RedisObject.dump_everything(:json)
 			# r.size.should > 100
-			# RedisObject.store.flushdb
+			# SpecHelper.flushdb
 			# RedisObject.load_dump r, :json
 			# DumpableObject.latest.generic_objects.count.should eq(1)
 			

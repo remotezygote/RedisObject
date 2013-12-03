@@ -30,7 +30,7 @@ module BenchmarkSpec
 	
 	describe Seabright::Benchmark do
 		before do
-			RedisObject.store.flushdb
+			SpecHelper.flushdb
 		end
 		
 		it "benchmarks a call" do

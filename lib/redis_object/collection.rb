@@ -6,20 +6,6 @@ module Seabright
 			"#{hkey}:collections"
 		end
 		
-		def load(o_id)
-			super(o_id)
-			store.smembers(hkey_col).each do |name|
-				collections[name] = Seabright::Collection.load(name,self)
-				define_access(name) do
-					get_collection(name)
-				end
-				define_access(name.to_s.singularize) do
-					get_collection(name).latest
-				end
-			end
-			true
-		end
-		
 		def delete_child(obj)
 			if col = get_collection(obj.collection_name)
 				col.delete obj
@@ -78,14 +64,18 @@ module Seabright
 			end
 		end
 		
-		def get(k)
-			if has_collection?(k)
-				get_collection(k)
-			elsif has_collection?(pk = k.to_s.pluralize)
-				get_collection(pk).first
-			else
-				super(k)
+		def load(o_id)
+			super(o_id)
+			store.smembers(hkey_col).each do |name|
+				collections[name] = Seabright::Collection.load(name,self)
+				define_access(name) do
+					get_collection(name)
+				end
+				define_access(name.to_s.singularize) do
+					get_collection(name).latest
+				end
 			end
+			true
 		end
 		
 		def has_collection?(name)
@@ -97,13 +87,13 @@ module Seabright
 				collections[name.to_s] ||= Collection.load(name,self)
 			else
 				store.sadd hkey_col, name
-				@collection_names << name.to_s
+				collection_names << name.to_s
 				collections[name.to_s] ||= Collection.load(name,self)
 				define_access(name.to_s.pluralize) do
 					get_collection(name)
 				end
 				define_access(name.to_s.singularize) do
-					get_collection(name).latest
+					get_collection(name).first
 				end
 			end
 			collections[name.to_s]
@@ -117,16 +107,6 @@ module Seabright
 			@collection_names ||= store.smembers(hkey_col)
 		end
 		
-		def mset(dat)
-			dat.select! {|k,v| !collections[k.to_s] }
-			super(dat)
-		end
-		
-		def set(k,v)
-			@data ? super(k,v) : has_collection?(k) ? get_collection(k.to_s).replace(v) : super(k,v)
-			v
-		end
-		
 		def collect_type_by_key(col,*keys)
 			collect = get_collection(col)
 			keys.each do |k|
@@ -135,6 +115,37 @@ module Seabright
 		end
 		
 		module ClassMethods
+			
+			def intercept_sets_for_collecting!
+				return if @intercepted_sets_for_collecting
+				self.class_eval do
+					
+					filter_gets do |obj, k, v|
+						if obj.has_collection?(k)
+							obj.get_collection(k)
+						elsif obj.has_collection?(pk = k.to_s.pluralize)
+							obj.get_collection(pk).first
+						else
+							v
+						end
+					end
+					
+					filter_sets do |obj, k, v|
+						if obj.has_collection?(k)
+							obj.get_collection(k.to_s).replace(v)
+							return [nil,nil]
+						else
+							[k,v]
+						end
+					end
+					
+					filter_msets do |obj, dat|
+						dat.select {|k,v| !obj.collections[k.to_s] }
+					end
+					
+				end
+				@intercepted_sets_for_collecting = true
+			end
 			
 			def hkey_col(ident = nil)
 				"#{hkey(ident)}:collections"
@@ -170,12 +181,11 @@ module Seabright
 			
 			def get(k)
 				if has_collection?(k)
-					get_collection(k)
+					return get_collection(k)
 				elsif has_collection?(pk = k.to_s.pluralize)
-					get_collection(pk).first
-				else
-					super(k)
+					return get_collection(pk).first
 				end
+				nil
 			end
 			
 			def has_collection?(name)
@@ -195,6 +205,7 @@ module Seabright
 		
 		def self.included(base)
 			base.extend(ClassMethods)
+			base.intercept_sets_for_collecting!
 		end
 		
 	end
@@ -238,12 +249,18 @@ module Seabright
 			"#{key}::zintersect_temp::#{RedisObject.new_id(4)}"
 		end
 		
-		RedisObject::ScriptSources::FwdScript = "redis.call('ZINTERSTORE', KEYS[1], 2, KEYS[2], KEYS[3], 'WEIGHTS', 1, 0)\nlocal keys = redis.call('ZRANGE', KEYS[1], 0, KEYS[4])\nredis.call('DEL', KEYS[1])\nreturn keys".freeze
-		RedisObject::ScriptSources::RevScript = "redis.call('ZINTERSTORE', KEYS[1], 2, KEYS[2], KEYS[3], 'WEIGHTS', 1, 0)\nlocal keys = redis.call('ZREVRANGE', KEYS[1], 0, KEYS[4])\nredis.call('DEL', KEYS[1])\nreturn keys".freeze
+		RedisObject::ScriptSources::FwdScript = "redis.call('ZINTERSTORE', KEYS[1], 2, KEYS[2], KEYS[3], 'WEIGHTS', 1, 0)
+			local keys = redis.call('ZRANGE', KEYS[1], 0, KEYS[4])
+			redis.call('DEL', KEYS[1])
+			return keys".freeze
+		RedisObject::ScriptSources::RevScript = "redis.call('ZINTERSTORE', KEYS[1], 2, KEYS[2], KEYS[3], 'WEIGHTS', 1, 0)
+			local keys = redis.call('ZREVRANGE', KEYS[1], 0, KEYS[4])
+			redis.call('DEL', KEYS[1])
+			return keys".freeze
 		
 		def keys_by_index(idx,num=-1,reverse=false)
-			keys = run_script(reverse ? :RevScript : :FwdScript, [temp_key, sort_index_key(idx), key, num])
-			ListEnumerator.new(keys) do |y|
+			keys = run_script(reverse ? :RevScript : :FwdScript, [temp_key, sort_index_key(idx), key, num>0 ? num - 1 : -1])
+			ListEnumerator.new(keys.uniq) do |y|
 				keys.each do |member|
 					y << member
 				end
@@ -584,6 +601,9 @@ module Seabright
 			end
 			
 			def class_const_for(name)
+				if cls = RedisObject.constant_lookups[name.to_s.classify.to_sym]
+					return cls
+				end
 				Object.const_get(name.to_s.classify.to_sym) rescue RedisObject
 			end
 

@@ -35,5 +35,13 @@ Debug = if ENV['DEBUG']
 		DebugMode.new
 	end
 
+module SpecHelper
+	
+	def self.flushdb
+		RedisObject.store.flushdb
+	end
+	
+end
+
 raise 'must specify TEST_DB' unless ENV['TEST_DB']
 RedisObject.configure_store({adapter:'Redis', db:ENV['TEST_DB']},:global,:alias)
