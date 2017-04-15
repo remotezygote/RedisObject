@@ -18,4 +18,11 @@ class ListEnumerator < Enumerator
 		end
 	end
 	
+	def +(other)
+		ListEnumerator.new([]) do |y|
+			each { |e| y << e }
+			other.each { |e| y << e }
+		end
+	end
+
 end
